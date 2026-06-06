@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from 'react'
+?import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getPagos, createPago, deletePago } from '../../api/finanzas'
 import { getContratos } from '../../api/contratos'
@@ -122,11 +122,11 @@ export default function PagosPage() {
                   ? <tr><td colSpan={6}><EmptyState icon="bi-arrow-up-circle" message="No hay pagos" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
-                      <td>{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString('es-AR') : 'â€”'}</td>
+                      <td>{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString('es-AR') : '�'}</td>
                       <td style={{ maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto}</td>
                       <td style={{ fontWeight:600, color:'#b91c1c' }}>- {r.moneda} {fmt(r.monto)}</td>
-                      <td>{r.nro_comprobante || 'â€”'}</td>
-                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : 'â€”'}</td>
+                      <td>{r.nro_comprobante || '�'}</td>
+                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '�'}</td>
                       <td><div className="table-actions">
                         <button className="btn btn-danger btn-sm btn-icon" title="Eliminar" onClick={() => setConfirm({ open:true, item:r })}>
                           <i className="bi bi-trash" /></button>
@@ -157,20 +157,20 @@ export default function PagosPage() {
           </div>
         </div>
         <div className="form-group"><label className="form-label">Concepto *</label>
-          <input className="form-control" value={modal.data.concepto} onChange={setF('concepto')} placeholder="Ej: ComisiÃ³n, Honorarios" />
+          <input className="form-control" value={modal.data.concepto} onChange={setF('concepto')} placeholder="Ej: Comisi�n, Honorarios" />
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
             <input className="form-control" type="number" min="0" step="0.01" value={modal.data.monto} onChange={setF('monto')} />
           </div>
-          <div className="form-group"><label className="form-label">NÂº Comprobante</label>
+          <div className="form-group"><label className="form-label">N� Comprobante</label>
             <input className="form-control" value={modal.data.nro_comprobante} onChange={setF('nro_comprobante')} />
           </div>
         </div>
         <div className="form-group"><label className="form-label">Contrato</label>
           <select className="form-select" value={modal.data.contrato_id} onChange={setF('contrato_id')}>
             <option value="">Sin contrato</option>
-            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} â€” {c.propiedad_titulo || c.id}</option>)}
+            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} � {c.propiedad_titulo || c.id}</option>)}
           </select>
         </div>
         <div className="form-group"><label className="form-label">Observaciones</label>
@@ -180,7 +180,7 @@ export default function PagosPage() {
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleDelete}
         title="Eliminar pago"
-        message={`Â¿Eliminar el pago "${confirm.item?.concepto}"? Esta acciÃ³n no se puede deshacer.`}
+        message={`�Eliminar el pago "${confirm.item?.concepto}"? Esta acci�n no se puede deshacer.`}
       />
     </>
   )

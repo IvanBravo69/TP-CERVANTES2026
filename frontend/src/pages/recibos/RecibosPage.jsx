@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from 'react'
+?import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getRecibos, emitirRecibo } from '../../api/recibos'
 import { getContratos } from '../../api/contratos'
@@ -81,18 +81,18 @@ export default function RecibosPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>NÂº Recibo</th><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Contrato</th><th>Observaciones</th></tr></thead>
+              <thead><tr><th>N� Recibo</th><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Contrato</th><th>Observaciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={6}><EmptyState icon="bi-receipt-cutoff" message="No hay recibos" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><strong style={{ color:'var(--primary)' }}>#{String(r.numero).padStart(6,'0')}</strong></td>
-                      <td>{r.fecha_emision ? new Date(r.fecha_emision).toLocaleDateString('es-AR') : 'â€”'}</td>
+                      <td>{r.fecha_emision ? new Date(r.fecha_emision).toLocaleDateString('es-AR') : '�'}</td>
                       <td style={{ maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR', { minimumFractionDigits:2 })}</td>
-                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : 'â€”'}</td>
-                      <td style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>{r.observaciones || 'â€”'}</td>
+                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '�'}</td>
+                      <td style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>{r.observaciones || '�'}</td>
                     </tr>
                   ))}
               </tbody>
@@ -109,7 +109,7 @@ export default function RecibosPage() {
         </>}
       >
         <p style={{ fontSize:'.85rem', color:'var(--tx-3)', marginBottom:'1rem' }}>
-          El nÃºmero de recibo se asignarÃ¡ automÃ¡ticamente al emitir.
+          El n�mero de recibo se asignar� autom�ticamente al emitir.
         </p>
         <div className="form-group"><label className="form-label">Concepto *</label>
           <input className="form-control" value={modal.data.concepto} onChange={setF('concepto')} />
@@ -125,13 +125,13 @@ export default function RecibosPage() {
           </div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Fecha de emisiÃ³n *</label>
+          <div className="form-group"><label className="form-label">Fecha de emisi�n *</label>
             <input className="form-control" type="date" value={modal.data.fecha_emision} onChange={setF('fecha_emision')} />
           </div>
           <div className="form-group"><label className="form-label">Contrato</label>
             <select className="form-select" value={modal.data.contrato_id} onChange={setF('contrato_id')}>
               <option value="">Sin contrato</option>
-              {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} â€” {c.propiedad_titulo || c.id}</option>)}
+              {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} � {c.propiedad_titulo || c.id}</option>)}
             </select>
           </div>
         </div>

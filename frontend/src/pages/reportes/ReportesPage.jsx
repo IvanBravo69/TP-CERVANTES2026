@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+?import { useEffect, useState } from 'react'
 import { getReportes, getContratos as getContratosMensuales, getTopClientes } from '../../api/stats'
 import Spinner from '../../components/Spinner'
 
@@ -26,7 +26,7 @@ export default function ReportesPage() {
   return (
     <>
       <div className="page-header">
-        <div><h1>Reportes</h1><p>Resumen estadÃ­stico del negocio</p></div>
+        <div><h1>Reportes</h1><p>Resumen estad�stico del negocio</p></div>
       </div>
 
       {resumen && (

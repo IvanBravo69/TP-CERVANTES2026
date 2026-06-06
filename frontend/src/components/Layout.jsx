@@ -1,4 +1,4 @@
-﻿import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+?import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const NAV = [
@@ -38,12 +38,12 @@ export default function Layout() {
           <div className="brand-icon"><i className="bi bi-buildings-fill" /></div>
           <div className="sidebar-brand-text">
             <h6>Sistema Britos</h6>
-            <small>GestiÃ³n Inmobiliaria</small>
+            <small>Gesti�n Inmobiliaria</small>
           </div>
         </div>
 
         <nav className="sidebar-nav">
-          <div className="sidebar-section">MenÃº</div>
+          <div className="sidebar-section">Men�</div>
           {NAV.filter(n => n.always || has(n.perm)).map(n => (
             <NavLink key={n.to} to={n.to} className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
               <i className={`bi ${n.icon}`} /> {n.label}
@@ -52,7 +52,7 @@ export default function Layout() {
 
           {ADMIN_NAV.some(n => has(n.perm)) && (
             <>
-              <div className="sidebar-section">AdministraciÃ³n</div>
+              <div className="sidebar-section">Administraci�n</div>
               {ADMIN_NAV.filter(n => has(n.perm)).map(n => (
                 <NavLink key={n.to} to={n.to} className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
                   <i className={`bi ${n.icon}`} /> {n.label}
@@ -71,7 +71,7 @@ export default function Layout() {
             </div>
           </div>
           <a href="#" className="sidebar-link" onClick={handleLogout}>
-            <i className="bi bi-box-arrow-left" /> Cerrar sesiÃ³n
+            <i className="bi bi-box-arrow-left" /> Cerrar sesi�n
           </a>
         </div>
       </aside>

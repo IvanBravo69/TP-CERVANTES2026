@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from 'react'
+?import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getUsuarios, createUsuario, updateUsuario, activarUsuario, desactivarUsuario } from '../../api/usuarios'
 import { getRoles } from '../../api/roles'
@@ -97,9 +97,9 @@ export default function UsuariosPage() {
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><strong>{r.username}</strong></td>
-                      <td>{r.full_name || 'â€”'}</td>
-                      <td>{r.email || 'â€”'}</td>
-                      <td><span className="badge" style={{ background:'#eff6ff', color:'#1d4ed8' }}>{r.role_nombre || 'â€”'}</span></td>
+                      <td>{r.full_name || '�'}</td>
+                      <td>{r.email || '�'}</td>
+                      <td><span className="badge" style={{ background:'#eff6ff', color:'#1d4ed8' }}>{r.role_nombre || '�'}</span></td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, password:'' })}>
@@ -143,14 +143,14 @@ export default function UsuariosPage() {
           </div>
         </div>
         <div className="form-group">
-          <label className="form-label">{modal.data.id ? 'Nueva contraseÃ±a (dejar vacÃ­o para no cambiar)' : 'ContraseÃ±a *'}</label>
+          <label className="form-label">{modal.data.id ? 'Nueva contrase�a (dejar vac�o para no cambiar)' : 'Contrase�a *'}</label>
           <input className="form-control" type="password" value={modal.data.password||''} onChange={setF('password')} autoComplete="new-password" />
         </div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar usuario' : 'Activar usuario'}
-        message={`Â¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} al usuario "${confirm.item?.username}"?`}
+        message={`�${confirm.item?.activo ? 'Desactivar' : 'Activar'} al usuario "${confirm.item?.username}"?`}
       />
     </>
   )
