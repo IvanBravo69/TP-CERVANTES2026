@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getServicios, createServicio, updateServicio, pagarServicio } from '../../api/servicios'
 import { getContratos } from '../../api/contratos'
@@ -70,7 +70,7 @@ export default function ServiciosPage() {
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div><h1>Servicios e Impuestos</h1><p>ABL, luz, gas y otros servicios</p></div>
-        <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-plus-lg" /> Nuevo servicio</button>
+        <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-plus-lg" /> Servicio</button>
       </div>
 
       <div className="filters-bar">
@@ -93,19 +93,19 @@ export default function ServiciosPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Tipo</th><th>Descripción</th><th>Período</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>Contrato</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Tipo</th><th>DescripciÃ³n</th><th>PerÃ­odo</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>Contrato</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={8}><EmptyState icon="bi-receipt" message="No hay servicios" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><span className="badge" style={{ background:'#e0f2fe', color:'#0369a1' }}>{r.tipo}</span></td>
-                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.descripcion || '—'}</td>
-                      <td>{r.periodo || '—'}</td>
-                      <td>{r.fecha_vencimiento ? new Date(r.fecha_vencimiento).toLocaleDateString('es-AR') : '—'}</td>
+                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.descripcion || 'â€”'}</td>
+                      <td>{r.periodo || 'â€”'}</td>
+                      <td>{r.fecha_vencimiento ? new Date(r.fecha_vencimiento).toLocaleDateString('es-AR') : 'â€”'}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR')}</td>
                       <td><span className={`badge badge-${r.estado === 'Pagado' ? 'activo' : 'inactivo'}`}>{r.estado}</span></td>
-                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '—'}</td>
+                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : 'â€”'}</td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r })}>
                           <i className="bi bi-pencil" /></button>
@@ -124,7 +124,7 @@ export default function ServiciosPage() {
         <Pagination total={total} page={page} limit={LIMIT} onPage={setPage} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar servicio' : 'Nuevo servicio'}
+      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar servicio' : 'Servicio'}
         footer={<>
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
@@ -142,14 +142,14 @@ export default function ServiciosPage() {
             </select>
           </div>
         </div>
-        <div className="form-group"><label className="form-label">Descripción</label>
+        <div className="form-group"><label className="form-label">DescripciÃ³n</label>
           <input className="form-control" value={modal.data.descripcion||''} onChange={setF('descripcion')} />
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
             <input className="form-control" type="number" min="0" step="0.01" value={modal.data.monto||''} onChange={setF('monto')} />
           </div>
-          <div className="form-group"><label className="form-label">Período</label>
+          <div className="form-group"><label className="form-label">PerÃ­odo</label>
             <input className="form-control" placeholder="ej: 2025-01" value={modal.data.periodo||''} onChange={setF('periodo')} />
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function ServiciosPage() {
           <div className="form-group"><label className="form-label">Contrato</label>
             <select className="form-select" value={modal.data.contrato_id||''} onChange={setF('contrato_id')}>
               <option value="">Sin contrato</option>
-              {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} — {c.propiedad_titulo || c.id}</option>)}
+              {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} â€” {c.propiedad_titulo || c.id}</option>)}
             </select>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function ServiciosPage() {
           <button className="btn btn-success" onClick={handlePagar}>Confirmar pago</button>
         </>}
       >
-        <p style={{ marginBottom:'1rem' }}>Marcando como pagado: <strong>{pagarModal.item?.tipo} — {pagarModal.item?.descripcion || ''}</strong></p>
+        <p style={{ marginBottom:'1rem' }}>Marcando como pagado: <strong>{pagarModal.item?.tipo} â€” {pagarModal.item?.descripcion || ''}</strong></p>
         <div className="form-group"><label className="form-label">Fecha de pago</label>
           <input className="form-control" type="date" value={pagarModal.fecha}
             onChange={e => setPagarModal(p => ({ ...p, fecha: e.target.value }))} />
@@ -181,3 +181,4 @@ export default function ServiciosPage() {
     </>
   )
 }
+

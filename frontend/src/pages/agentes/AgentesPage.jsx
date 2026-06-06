@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getAgentes, createAgente, updateAgente, activarAgente, desactivarAgente } from '../../api/agentes'
 import Modal from '../../components/Modal'
@@ -62,13 +62,13 @@ export default function AgentesPage() {
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div><h1>Agentes</h1><p>Corredores y personal de la inmobiliaria</p></div>
-        <button className="btn btn-primary" onClick={() => setModal({ open:true, data:{...EMPTY} })}><i className="bi bi-plus-lg" /> Nuevo agente</button>
+        <button className="btn btn-primary" onClick={() => setModal({ open:true, data:{...EMPTY} })}><i className="bi bi-plus-lg" /> Agente</button>
       </div>
 
       <div className="filters-bar">
         <div className="filter-group">
           <label>Buscar</label>
-          <input className="filter-input" style={{ width:220 }} placeholder="Nombre, matrícula..." value={filters.search} onChange={set('search')} />
+          <input className="filter-input" style={{ width:220 }} placeholder="Nombre, matrÃ­cula..." value={filters.search} onChange={set('search')} />
         </div>
         <div className="filter-group">
           <label>Estado</label>
@@ -82,7 +82,7 @@ export default function AgentesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Nombre</th><th>Apellido</th><th>Matrícula</th><th>Teléfono</th><th>Email</th><th>Comisión %</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Apellido</th><th>MatrÃ­cula</th><th>TelÃ©fono</th><th>Email</th><th>ComisiÃ³n %</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={8}><EmptyState icon="bi-person-badge" message="No hay agentes" /></td></tr>
@@ -90,9 +90,9 @@ export default function AgentesPage() {
                     <tr key={r.id}>
                       <td><strong>{r.nombre}</strong></td>
                       <td>{r.apellido}</td>
-                      <td>{r.matricula || '—'}</td>
-                      <td>{r.telefono || '—'}</td>
-                      <td>{r.email || '—'}</td>
+                      <td>{r.matricula || 'â€”'}</td>
+                      <td>{r.telefono || 'â€”'}</td>
+                      <td>{r.email || 'â€”'}</td>
                       <td>{r.comision_pct}%</td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
@@ -110,7 +110,7 @@ export default function AgentesPage() {
       </div>
 
       <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))}
-        title={modal.data.id ? 'Editar agente' : 'Nuevo agente'}
+        title={modal.data.id ? 'Editar agente' : 'Agente'}
         footer={<>
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
@@ -122,22 +122,23 @@ export default function AgentesPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} /></div>
-          <div className="form-group"><label className="form-label">Matrícula</label><input className="form-control" value={modal.data.matricula||''} onChange={setF('matricula')} /></div>
+          <div className="form-group"><label className="form-label">MatrÃ­cula</label><input className="form-control" value={modal.data.matricula||''} onChange={setF('matricula')} /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
-          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
+          <div className="form-group"><label className="form-label">TelÃ©fono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
         </div>
         <div className="form-group">
-          <label className="form-label">Comisión %</label>
+          <label className="form-label">ComisiÃ³n %</label>
           <input className="form-control" type="number" min="0" max="100" step="0.01" value={modal.data.comision_pct||0} onChange={setF('comision_pct')} />
         </div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar agente' : 'Activar agente'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
+        message={`Â¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
       />
     </>
   )
 }
+
