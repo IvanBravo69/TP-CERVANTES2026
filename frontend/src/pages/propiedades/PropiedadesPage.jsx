@@ -12,6 +12,18 @@ import Spinner from '../../components/Spinner'
 const EMPTY = { tipo:'Casa', operacion:'Alquiler', titulo:'', descripcion:'', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
 const BADG  = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
+const TIPOS_HAB = [
+  { key:'Dormitorio', icon:'bi-moon-stars' },
+  { key:'Cocina',     icon:'bi-cup-hot' },
+  { key:'Banio',      icon:'bi-droplet', label:'Baño' },
+  { key:'Living',     icon:'bi-tv' },
+  { key:'Comedor',    icon:'bi-table' },
+  { key:'Cochera',    icon:'bi-car-front' },
+  { key:'Estudio',    icon:'bi-book' },
+  { key:'Lavadero',   icon:'bi-water' },
+]
+const EMPTY_HAB = () => Object.fromEntries(TIPOS_HAB.map(h => [h.key, 0]))
+
 export default function PropiedadesPage() {
   const [rows, setRows]       = useState([])
   const [total, setTotal]     = useState(0)
@@ -23,6 +35,7 @@ export default function PropiedadesPage() {
   const [confirm, setConfirm] = useState({ open:false, item:null })
   const [clientes, setClientes] = useState([])
   const [agentes,  setAgentes]  = useState([])
+  const [habitaciones, setHabitaciones] = useState(EMPTY_HAB())
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -38,6 +51,9 @@ export default function PropiedadesPage() {
   useEffect(() => { setPage(1); load(1) }, [filters])
 
   async function openModal(data = { ...EMPTY }) {
+    const h = EMPTY_HAB()
+    if (data.ambientes) h.Dormitorio = Number(data.ambientes)
+    setHabitaciones(h)
     setModal({ open:true, data })
     const [rc, ra] = await Promise.all([
       getClientes({ limit:200, activo:1 }),
@@ -50,7 +66,8 @@ export default function PropiedadesPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      const payload = { ...modal.data, precio: Number(modal.data.precio), superficie_m2: modal.data.superficie_m2 ? Number(modal.data.superficie_m2) : null, ambientes: modal.data.ambientes ? Number(modal.data.ambientes) : null, propietario_id: modal.data.propietario_id || null, agente_id: modal.data.agente_id || null }
+      const totalAmb = Object.values(habitaciones).reduce((a, b) => a + b, 0)
+      const payload = { ...modal.data, precio: Number(modal.data.precio), superficie_m2: modal.data.superficie_m2 ? Number(modal.data.superficie_m2) : null, ambientes: totalAmb || null, propietario_id: modal.data.propietario_id || null, agente_id: modal.data.agente_id || null }
       const res = modal.data.id ? await updatePropiedad(modal.data.id, payload) : await createPropiedad(payload)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
       toast.success(modal.data.id ? 'Propiedad actualizada' : 'Propiedad creada')
@@ -161,8 +178,34 @@ export default function PropiedadesPage() {
           <div className="form-group"><label className="form-label">Precio *</label><input className="form-control" type="number" value={modal.data.precio||''} onChange={setF('precio')} /></div>
           <div className="form-group"><label className="form-label">Superficie m²</label><input className="form-control" type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
         </div>
+        <div className="form-group">
+          <label className="form-label">
+            Ambientes
+            <span style={{ marginLeft:'.5rem', fontWeight:400, color:'var(--tx-3)', fontSize:'.8rem' }}>
+              Total: {Object.values(habitaciones).reduce((a,b)=>a+b,0)}
+            </span>
+          </label>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'.5rem', marginTop:'.25rem' }}>
+            {TIPOS_HAB.map(h => (
+              <div key={h.key} style={{ border:'1px solid #e2e8f0', borderRadius:8, padding:'.5rem .625rem', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc' }}>
+                <span style={{ fontSize:'.75rem', fontWeight:500, display:'flex', alignItems:'center', gap:'.3rem' }}>
+                  <i className={`bi ${h.icon}`} style={{ color:'#64748b' }} />
+                  {h.label || h.key}
+                </span>
+                <div style={{ display:'flex', alignItems:'center', gap:'.25rem' }}>
+                  <button type="button" style={{ width:22, height:22, borderRadius:4, border:'1px solid #cbd5e1', background:'#fff', cursor:'pointer', fontSize:'.875rem', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}
+                    onClick={() => setHabitaciones(p => ({ ...p, [h.key]: Math.max(0, p[h.key]-1) }))}>−</button>
+                  <span style={{ fontSize:'.8rem', fontWeight:600, minWidth:16, textAlign:'center' }}>{habitaciones[h.key]}</span>
+                  <button type="button" style={{ width:22, height:22, borderRadius:4, border:'1px solid #cbd5e1', background:'#fff', cursor:'pointer', fontSize:'.875rem', lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}
+                    onClick={() => setHabitaciones(p => ({ ...p, [h.key]: p[h.key]+1 }))}>+</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Ambientes</label><input className="form-control" type="number" value={modal.data.ambientes||''} onChange={setF('ambientes')} /></div>
+          <div style={{ display:'none' }} />
           <div className="form-group"><label className="form-label">Propietario</label>
             <select className="form-select" value={modal.data.propietario_id||''} onChange={setF('propietario_id')}>
               <option value="">Sin propietario</option>
