@@ -1,4 +1,4 @@
-?import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getPagos, createPago, deletePago } from '../../api/finanzas'
 import { getContratos } from '../../api/contratos'

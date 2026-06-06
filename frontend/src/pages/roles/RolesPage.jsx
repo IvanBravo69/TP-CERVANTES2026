@@ -1,4 +1,4 @@
-?import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { getRoles, createRol, getPermisos, getPermisosDeRol, asignarPermisos } from '../../api/roles'
 import Modal from '../../components/Modal'

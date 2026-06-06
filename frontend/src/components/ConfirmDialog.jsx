@@ -1,4 +1,4 @@
-?import Modal from './Modal'
+import Modal from './Modal'
 
 export default function ConfirmDialog({ open, onClose, onConfirm, title, message, loading }) {
   return (

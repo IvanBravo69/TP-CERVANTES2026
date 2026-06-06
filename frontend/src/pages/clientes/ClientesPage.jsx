@@ -1,4 +1,4 @@
-?import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getClientes, createCliente, updateCliente, activarCliente, desactivarCliente } from '../../api/clientes'
 import Modal from '../../components/Modal'

@@ -1,4 +1,4 @@
-?import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getContratos, createContrato, updateContrato, cambiarEstado, renovarContrato, getGarantes, addGarante, removeGarante } from '../../api/contratos'
 import { getPropiedades } from '../../api/propiedades'
