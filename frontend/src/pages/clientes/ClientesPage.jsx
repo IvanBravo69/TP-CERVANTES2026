@@ -110,7 +110,7 @@ export default function ClientesPage() {
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
               <thead><tr>
-                <th>DNI / CUIT</th><th>Nombre / Razón Social</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
+                <th>DNI / CUIT</th><th>Nombre / Razón Social</th><th>Descripción</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {rows.length === 0
@@ -120,8 +120,8 @@ export default function ClientesPage() {
                       <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || '—'}</td>
                       <td>
                         <strong>{r.razon_social || (r.nombre + (r.apellido ? ' ' + r.apellido : ''))}</strong>
-                        {r.descripcion && <div style={{ fontSize:'.75rem', color:'var(--tx-3)' }}>{r.descripcion}</div>}
                       </td>
+                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.descripcion || '—'}</td>
                       <td>{r.telefono || '—'}</td>
                       <td>{r.email || '—'}</td>
                       <td><span className={`badge badge-${r.tipo?.toLowerCase()}`}>{r.tipo}</span></td>
@@ -157,8 +157,9 @@ export default function ClientesPage() {
         {/* DNI primero */}
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">DNI / CUIT</label>
-            <input className="form-control" value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" />
+            <label className="form-label">{esEmpresa ? 'CUIT' : 'DNI'}</label>
+            <input className="form-control" value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')}
+              placeholder={esEmpresa ? '30-12345678-9' : '20-12345678-9'} />
           </div>
           <div className="form-group">
             <label className="form-label">Tipo</label>
