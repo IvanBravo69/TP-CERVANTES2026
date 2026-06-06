@@ -15,9 +15,11 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
   : ['http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:5173', 'http://localhost:4200'];
 
+const allowAll = allowedOrigins.includes('*');
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin || allowAll || allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error(`CORS: origen no permitido — ${origin}`));
   },
   credentials: true,
