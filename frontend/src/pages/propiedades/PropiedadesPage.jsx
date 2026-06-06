@@ -166,14 +166,14 @@ export default function PropiedadesPage() {
           <div className="form-group"><label className="form-label">Propietario</label>
             <select className="form-select" value={modal.data.propietario_id||''} onChange={setF('propietario_id')}>
               <option value="">Sin propietario</option>
-              {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre} {c.apellido||''}</option>)}
+              {clientes.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''}</option>)}
             </select>
           </div>
         </div>
         <div className="form-group"><label className="form-label">Agente asignado</label>
           <select className="form-select" value={modal.data.agente_id||''} onChange={setF('agente_id')}>
             <option value="">Sin agente</option>
-            {agentes.map(a => <option key={a.id} value={a.id}>{a.nombre} {a.apellido}</option>)}
+            {agentes.map(a => <option key={a.id} value={a.id}>{a.apellido} {a.nombre}</option>)}
           </select>
         </div>
       </Modal>
@@ -185,4 +185,5 @@ export default function PropiedadesPage() {
     </>
   )
 }
+
 

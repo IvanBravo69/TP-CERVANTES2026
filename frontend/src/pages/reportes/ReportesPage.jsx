@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { getReportes, getContratos as getContratosMensuales, getTopClientes } from '../../api/stats'
 import Spinner from '../../components/Spinner'
 
@@ -26,7 +26,7 @@ export default function ReportesPage() {
   return (
     <>
       <div className="page-header">
-        <div><h1>Reportes</h1><p>Resumen estadístico del negocio</p></div>
+        <div><h1>Reportes</h1><p>Resumen estadÃ­stico del negocio</p></div>
       </div>
 
       {resumen && (
@@ -91,7 +91,7 @@ export default function ReportesPage() {
                   : topCli.map((r, i) => (
                     <tr key={r.id}>
                       <td style={{ width:32, color:'var(--tx-4)', fontWeight:700 }}>{i + 1}</td>
-                      <td><strong>{r.nombre} {r.apellido || ''}</strong></td>
+                      <td><strong>{r.apellido} {r.nombre || ''}</strong></td>
                       <td><span className="badge" style={{ background:'#eff6ff', color:'#1d4ed8' }}>{r.total_contratos}</span></td>
                     </tr>
                   ))}
@@ -103,3 +103,4 @@ export default function ReportesPage() {
     </>
   )
 }
+

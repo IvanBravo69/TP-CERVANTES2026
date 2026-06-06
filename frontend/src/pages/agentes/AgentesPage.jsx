@@ -117,8 +117,8 @@ export default function AgentesPage() {
         </>}
       >
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
           <div className="form-group"><label className="form-label">Apellido *</label><input className="form-control" value={modal.data.apellido||''} onChange={setF('apellido')} /></div>
+          <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} /></div>
@@ -141,4 +141,5 @@ export default function AgentesPage() {
     </>
   )
 }
+
 

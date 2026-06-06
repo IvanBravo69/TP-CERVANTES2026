@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getStats } from '../api/stats'
@@ -31,9 +31,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   const h = new Date().getHours()
-  const greeting = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting = h < 12 ? 'Buenos dÃ­as' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
   const name = user?.full_name?.split(' ')[0] || user?.username || 'usuario'
-  const days   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+  const days   = ['Domingo','Lunes','Martes','MiÃ©rcoles','Jueves','Viernes','SÃ¡bado']
   const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
   const now = new Date()
   const dateStr = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`
@@ -96,12 +96,12 @@ export default function Dashboard() {
 
             <div className="card">
               <div className="card-header">
-                <h6><i className="bi bi-clock-history me-2" />Últimas propiedades</h6>
+                <h6><i className="bi bi-clock-history me-2" />Ãšltimas propiedades</h6>
                 <Link to="/propiedades" className="btn btn-outline btn-sm">Ver todas</Link>
               </div>
               <div className="table-wrapper">
                 <table>
-                  <thead><tr><th>Título</th><th>Tipo</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>TÃ­tulo</th><th>Tipo</th><th>Estado</th></tr></thead>
                   <tbody>
                     {(stats?.ultimas_propiedades || []).length === 0
                       ? <tr><td colSpan={3}><div className="empty-state"><i className="bi bi-building" />Sin propiedades</div></td></tr>
@@ -123,3 +123,4 @@ export default function Dashboard() {
     </>
   )
 }
+

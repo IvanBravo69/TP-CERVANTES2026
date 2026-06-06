@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+﻿import { createContext, useContext, useState, useCallback } from 'react'
 
 const AuthContext = createContext(null)
 
@@ -33,3 +33,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext)
+

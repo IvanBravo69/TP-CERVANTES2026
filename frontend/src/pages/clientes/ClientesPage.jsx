@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getClientes, createCliente, updateCliente, activarCliente, desactivarCliente } from '../../api/clientes'
 import Modal from '../../components/Modal'
@@ -110,20 +110,20 @@ export default function ClientesPage() {
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
               <thead><tr>
-                <th>DNI / CUIT</th><th>Nombre / Razón Social</th><th>Descripción</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
+                <th>DNI / CUIT</th><th>Nombre / RazÃ³n Social</th><th>DescripciÃ³n</th><th>TelÃ©fono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={7}><EmptyState icon="bi-people" message="No hay clientes" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
-                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || '—'}</td>
+                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || 'â€”'}</td>
                       <td>
                         <strong>{r.razon_social || (r.nombre + (r.apellido ? ' ' + r.apellido : ''))}</strong>
                       </td>
-                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.descripcion || '—'}</td>
-                      <td>{r.telefono || '—'}</td>
-                      <td>{r.email || '—'}</td>
+                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.descripcion || 'â€”'}</td>
+                      <td>{r.telefono || 'â€”'}</td>
+                      <td>{r.email || 'â€”'}</td>
                       <td><span className={`badge badge-${r.tipo?.toLowerCase()}`}>{r.tipo}</span></td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
@@ -171,32 +171,32 @@ export default function ClientesPage() {
 
         {esEmpresa && (
           <div className="form-group">
-            <label className="form-label">Razón Social</label>
+            <label className="form-label">RazÃ³n Social</label>
             <input className="form-control" value={modal.data.razon_social || ''} onChange={setF('razon_social')} placeholder="Nombre de la empresa" />
           </div>
         )}
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Nombre *</label>
-            <input className="form-control" value={modal.data.nombre || ''} onChange={setF('nombre')} />
-          </div>
-          <div className="form-group">
             <label className="form-label">Apellido</label>
             <input className="form-control" value={modal.data.apellido || ''} onChange={setF('apellido')} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Nombre *</label>
+            <input className="form-control" value={modal.data.nombre || ''} onChange={setF('nombre')} />
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Descripción</label>
+            <label className="form-label">DescripciÃ³n</label>
             <select className="form-select" value={modal.data.descripcion || ''} onChange={setF('descripcion')}>
-              <option value="">— Sin especificar —</option>
+              <option value="">â€” Sin especificar â€”</option>
               {DESCRIPCIONES.map(d => <option key={d}>{d}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">País</label>
+            <label className="form-label">PaÃ­s</label>
             <input className="form-control" value={modal.data.pais || ''} onChange={setF('pais')} placeholder="Argentina" />
           </div>
         </div>
@@ -204,11 +204,11 @@ export default function ClientesPage() {
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Provincia</label>
-            <input className="form-control" value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="Córdoba" />
+            <input className="form-control" value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="CÃ³rdoba" />
           </div>
           <div className="form-group">
-            <label className="form-label">Dirección</label>
-            <input className="form-control" value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. Colón 1234" />
+            <label className="form-label">DirecciÃ³n</label>
+            <input className="form-control" value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. ColÃ³n 1234" />
           </div>
         </div>
 
@@ -221,8 +221,8 @@ export default function ClientesPage() {
           <div className="form-group">
             <label className="form-label">Moneda</label>
             <select className="form-select" value={modal.data.moneda || 'ARS'} onChange={setF('moneda')}>
-              <option value="ARS">ARS — Peso</option>
-              <option value="USD">USD — Dólar</option>
+              <option value="ARS">ARS â€” Peso</option>
+              <option value="USD">USD â€” DÃ³lar</option>
             </select>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function ClientesPage() {
             <input className="form-control" type="email" value={modal.data.email || ''} onChange={setF('email')} />
           </div>
           <div className="form-group">
-            <label className="form-label">Teléfono</label>
+            <label className="form-label">TelÃ©fono</label>
             <input className="form-control" value={modal.data.telefono || ''} onChange={setF('telefono')} />
           </div>
         </div>
@@ -241,8 +241,9 @@ export default function ClientesPage() {
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar cliente' : 'Activar cliente'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
+        message={`Â¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
       />
     </>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { login } from '../api/auth'
@@ -20,11 +20,11 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await login(form)
-      if (!res?.success) { setError(res?.message || 'Error al iniciar sesión'); return }
+      if (!res?.success) { setError(res?.message || 'Error al iniciar sesiÃ³n'); return }
       setSession(res.data.token, res.data.usuario)
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err?.message || 'Error al iniciar sesión')
+      setError(err?.message || 'Error al iniciar sesiÃ³n')
     } finally {
       setLoading(false)
     }
@@ -37,7 +37,7 @@ export default function Login() {
           <div className="login-logo">
             <div className="logo-icon"><i className="bi bi-buildings-fill" /></div>
             <h4>Sistema Britos</h4>
-            <p>Gestión Inmobiliaria</p>
+            <p>GestiÃ³n Inmobiliaria</p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -47,18 +47,18 @@ export default function Login() {
                 <i className="bi bi-person" style={{ position:'absolute', left:'.75rem', top:'50%', transform:'translateY(-50%)', color:'var(--tx-4)', fontSize:'.875rem' }} />
                 <input className="form-control" style={{ paddingLeft:'2.25rem' }}
                   value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-                  placeholder="Ingresá tu usuario" autoComplete="username" required />
+                  placeholder="IngresÃ¡ tu usuario" autoComplete="username" required />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Contraseña</label>
+              <label className="form-label">ContraseÃ±a</label>
               <div style={{ position: 'relative' }}>
                 <i className="bi bi-lock" style={{ position:'absolute', left:'.75rem', top:'50%', transform:'translateY(-50%)', color:'var(--tx-4)', fontSize:'.875rem' }} />
                 <input className="form-control" style={{ paddingLeft:'2.25rem', paddingRight:'2.5rem' }}
                   type={showPwd ? 'text' : 'password'}
                   value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  placeholder="••••••••" autoComplete="current-password" required />
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autoComplete="current-password" required />
                 <button type="button" onClick={() => setShowPwd(s => !s)}
                   style={{ position:'absolute', right:'.75rem', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--tx-4)', padding:0, fontSize:'.875rem' }}>
                   <i className={`bi ${showPwd ? 'bi-eye-slash' : 'bi-eye'}`} />
@@ -73,7 +73,7 @@ export default function Login() {
             )}
 
             <button type="submit" className="btn btn-primary w-100" style={{ height: 40 }} disabled={loading}>
-              {loading ? <span className="spinner" style={{ width:16, height:16, borderWidth:2 }} /> : 'Iniciar Sesión'}
+              {loading ? <span className="spinner" style={{ width:16, height:16, borderWidth:2 }} /> : 'Iniciar SesiÃ³n'}
             </button>
           </form>
         </div>
@@ -83,14 +83,14 @@ export default function Login() {
         <div className="login-brand">
           <div className="brand-logo"><i className="bi bi-buildings-fill" /></div>
           <h3>Sistema Britos</h3>
-          <p>Plataforma integral de gestión inmobiliaria</p>
+          <p>Plataforma integral de gestiÃ³n inmobiliaria</p>
         </div>
         <div className="feature-list">
           {[
-            { icon:'bi-people-fill',               title:'Gestión de Clientes',     desc:'Propietarios, inquilinos y compradores centralizados' },
-            { icon:'bi-building-fill',             title:'Catálogo de Propiedades',  desc:'Filtros por tipo, precio, ciudad y estado' },
+            { icon:'bi-people-fill',               title:'GestiÃ³n de Clientes',     desc:'Propietarios, inquilinos y compradores centralizados' },
+            { icon:'bi-building-fill',             title:'CatÃ¡logo de Propiedades',  desc:'Filtros por tipo, precio, ciudad y estado' },
             { icon:'bi-file-earmark-text-fill',    title:'Contratos y Finanzas',     desc:'Alquileres, ventas y registro de cobros' },
-            { icon:'bi-shield-lock-fill',          title:'Roles y Permisos',         desc:'Control de acceso por área de trabajo' },
+            { icon:'bi-shield-lock-fill',          title:'Roles y Permisos',         desc:'Control de acceso por Ã¡rea de trabajo' },
           ].map(f => (
             <div key={f.title} className="feature-item">
               <div className="feature-icon"><i className={`bi ${f.icon}`} /></div>
@@ -102,3 +102,4 @@ export default function Login() {
     </div>
   )
 }
+
