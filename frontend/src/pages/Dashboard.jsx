@@ -1,7 +1,7 @@
-?import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getStats } from '../api/stats'
+import { getStats, getFinanzasPeriodo } from '../api/stats'
 import Spinner from '../components/Spinner'
 
 const STAT_CFG = [
@@ -23,17 +23,29 @@ const ESTADO_CFG = {
 
 const BADGE = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
-function fmt(n) { return Number(n || 0).toLocaleString('es-AR') }
+function fmt(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits:2, maximumFractionDigits:2 }) }
+function fmtN(n) { return Number(n || 0).toLocaleString('es-AR') }
+
+function primerDiaMes() {
+  const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`
+}
+function hoy() {
+  const d = new Date(); return d.toISOString().split('T')[0]
+}
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const [stats, setStats] = useState(null)
+  const [stats,   setStats]   = useState(null)
   const [loading, setLoading] = useState(true)
+  const [desde,   setDesde]   = useState(primerDiaMes())
+  const [hasta,   setHasta]   = useState(hoy())
+  const [fin,     setFin]     = useState(null)
+  const [loadFin, setLoadFin] = useState(false)
 
   const h = new Date().getHours()
-  const greeting = h < 12 ? 'Buenos d�as' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
   const name = user?.full_name?.split(' ')[0] || user?.username || 'usuario'
-  const days   = ['Domingo','Lunes','Martes','Mi�rcoles','Jueves','Viernes','S�bado']
+  const days   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
   const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
   const now = new Date()
   const dateStr = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`
@@ -42,7 +54,27 @@ export default function Dashboard() {
     getStats().then(r => { if (r?.success) setStats(r.data) }).finally(() => setLoading(false))
   }, [])
 
+  const loadFinanzas = useCallback(async () => {
+    if (!desde || !hasta) return
+    setLoadFin(true)
+    try {
+      const r = await getFinanzasPeriodo({ desde, hasta, limit: 1 })
+      if (r?.success) setFin(r.data.totales)
+    } finally { setLoadFin(false) }
+  }, [desde, hasta])
+
+  useEffect(() => { loadFinanzas() }, [loadFinanzas])
+
   const total = stats?.total_propiedades || 1
+
+  const finCards = fin ? [
+    { label:'Cobrado ARS', val:`$ ${fmt(fin.ing_ars)}`,     icon:'bi-arrow-down-circle-fill', color:'#15803d', bg:'#f0fdf4' },
+    { label:'Cobrado USD', val:`U$S ${fmt(fin.ing_usd)}`,   icon:'bi-arrow-down-circle-fill', color:'#1d4ed8', bg:'#eff6ff' },
+    { label:'Pagado ARS',  val:`$ ${fmt(fin.eg_ars)}`,      icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
+    { label:'Pagado USD',  val:`U$S ${fmt(fin.eg_usd)}`,    icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
+    { label:'Balance ARS', val:`$ ${fmt(fin.ing_ars - fin.eg_ars)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
+    { label:'Balance USD', val:`U$S ${fmt(fin.ing_usd - fin.eg_usd)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
+  ] : []
 
   return (
     <>
@@ -56,6 +88,7 @@ export default function Dashboard() {
         <div style={{ textAlign:'center', padding:'3rem' }}><Spinner size={32} /></div>
       ) : (
         <>
+          {/* Estadísticas generales */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))', gap:'.875rem', marginBottom:'1.5rem' }}>
             {STAT_CFG.map(cfg => (
               <div key={cfg.key} className="stat-card">
@@ -64,7 +97,7 @@ export default function Dashboard() {
                     <i className={`bi ${cfg.icon}`} />
                   </div>
                   <div>
-                    <div className="stat-value">{fmt(stats?.[cfg.key])}</div>
+                    <div className="stat-value">{fmtN(stats?.[cfg.key])}</div>
                     <div className="stat-label">{cfg.label}</div>
                   </div>
                 </div>
@@ -72,6 +105,46 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* Rango de fechas financiero */}
+          <div className="card" style={{ marginBottom:'1rem', padding:'1rem 1.25rem' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+              <span style={{ fontWeight:600, fontSize:'.875rem' }}>
+                <i className="bi bi-calendar-range" style={{ marginRight:'.4rem' }} />
+                Resumen financiero del período
+              </span>
+              <div style={{ display:'flex', alignItems:'center', gap:'.5rem', marginLeft:'auto', flexWrap:'wrap' }}>
+                <label style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>Desde</label>
+                <input type="date" className="filter-input" style={{ width:145 }}
+                  value={desde} onChange={e => setDesde(e.target.value)} />
+                <label style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>Hasta</label>
+                <input type="date" className="filter-input" style={{ width:145 }}
+                  value={hasta} onChange={e => setHasta(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Tarjetas financieras del período */}
+          {loadFin ? (
+            <div style={{ textAlign:'center', padding:'1.5rem' }}><Spinner /></div>
+          ) : (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))', gap:'.875rem', marginBottom:'1.5rem' }}>
+              {finCards.map(c => (
+                <div key={c.label} className="stat-card">
+                  <div className="stat-card-inner">
+                    <div className="stat-icon" style={{ background:c.bg, color:c.color }}>
+                      <i className={`bi ${c.icon}`} />
+                    </div>
+                    <div>
+                      <div className="stat-value" style={{ fontSize:'1rem' }}>{c.val}</div>
+                      <div className="stat-label">{c.label}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Gráficos y tablas */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
             <div className="card">
               <div className="card-header">
@@ -84,7 +157,7 @@ export default function Dashboard() {
                   <div key={key} className="progress-row">
                     <div className="progress-row-top">
                       <span style={{ fontSize:'.8rem', fontWeight:600, color:'var(--tx-2)' }}>{cfg.label}</span>
-                      <span style={{ fontSize:'.8rem', fontWeight:700, color:'var(--tx-1)' }}>{fmt(val)} <span style={{ fontWeight:400, color:'var(--tx-4)' }}>({pct}%)</span></span>
+                      <span style={{ fontSize:'.8rem', fontWeight:700, color:'var(--tx-1)' }}>{fmtN(val)} <span style={{ fontWeight:400, color:'var(--tx-4)' }}>({pct}%)</span></span>
                     </div>
                     <div className="progress-bar-wrap">
                       <div className="progress-bar-fill" style={{ width:`${pct}%`, background: cfg.fill }} />
@@ -96,12 +169,12 @@ export default function Dashboard() {
 
             <div className="card">
               <div className="card-header">
-                <h6><i className="bi bi-clock-history me-2" />�ltimas propiedades</h6>
+                <h6><i className="bi bi-clock-history me-2" />Últimas propiedades</h6>
                 <Link to="/propiedades" className="btn btn-outline btn-sm">Ver todas</Link>
               </div>
               <div className="table-wrapper">
                 <table>
-                  <thead><tr><th>T�tulo</th><th>Tipo</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>Título</th><th>Tipo</th><th>Estado</th></tr></thead>
                   <tbody>
                     {(stats?.ultimas_propiedades || []).length === 0
                       ? <tr><td colSpan={3}><div className="empty-state"><i className="bi bi-building" />Sin propiedades</div></td></tr>
@@ -123,4 +196,3 @@ export default function Dashboard() {
     </>
   )
 }
-
