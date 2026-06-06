@@ -40,15 +40,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-testConnection()
-  .then(() => {
-    app.listen(PORT, () =>
-      console.log(`Sistema Britos API corriendo en http://localhost:${PORT}`)
-    );
-  })
-  .catch((err) => {
-    console.error('Error conectando a MySQL:', err.message);
-    process.exit(1);
-  });
+if (process.env.NODE_ENV !== 'production') {
+  testConnection()
+    .then(() => {
+      app.listen(PORT, () =>
+        console.log(`Sistema Britos API corriendo en http://localhost:${PORT}`)
+      );
+    })
+    .catch((err) => {
+      console.error('Error conectando a MySQL:', err.message);
+      process.exit(1);
+    });
+}
 
 module.exports = app;
