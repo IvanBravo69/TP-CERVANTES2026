@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Dashboard</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+      <h2 id="welcome-title">Bienvenido al sistema</h2>
+      <p id="welcome-sub">Cargando...</p>
+      <i class="bi bi-buildings-fill banner-icon"></i>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.875rem;margin-bottom:1.5rem" id="stats-grid">
+      <div class="stat-card" style="min-height:90px;display:flex;align-items:center;justify-content:center"><div class="spinner"></div></div>
+    </div>
+
+    <!-- SECOND ROW -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+      <!-- Propiedades por estado -->
+      <div class="card">
+        <div class="card-header">
+          <h6><i class="bi bi-pie-chart me-2"></i>Propiedades por estado</h6>
+        </div>
+        <div id="prop-estados"></div>
+      </div>
+
+      <!-- Últimas propiedades -->
+      <div class="card">
+        <div class="card-header">
+          <h6><i class="bi bi-clock-history me-2"></i>Últimas propiedades</h6>
+          <a href="/propiedades.html" class="btn btn-outline btn-sm">Ver todas</a>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="recent-props">
+              <tr class="loading-row"><td colspan="3"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Dashboard');
+
+/* ── Bienvenida dinámica ── */
+(function() {
+  const user = API.getUser();
+  const name = user?.full_name?.split(' ')[0] || user?.username || 'usuario';
+  const h = new Date().getHours();
+  const greeting = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('welcome-title').textContent = `${greeting}, ${name}`;
+
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const now = new Date();
+  document.getElementById('welcome-sub').textContent =
+    `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+})();
+
+const STAT_CONFIG = [
+  { key: 'total_clientes',    label: 'Clientes activos',     icon: 'bi-people-fill',            bg: '#f5f3ff', color: '#7c3aed' },
+  { key: 'total_propiedades', label: 'Propiedades',          icon: 'bi-building-fill',           bg: '#eff6ff', color: '#1d4ed8' },
+  { key: 'disponibles',       label: 'Disponibles',          icon: 'bi-check-circle-fill',       bg: '#f0fdf4', color: '#15803d' },
+  { key: 'alquiladas',        label: 'Alquiladas',           icon: 'bi-house-fill',              bg: '#fefce8', color: '#a16207' },
+  { key: 'vendidas',          label: 'Vendidas',             icon: 'bi-currency-dollar',         bg: '#fdf4ff', color: '#9333ea' },
+  { key: 'contratos_activos', label: 'Contratos activos',    icon: 'bi-file-earmark-check-fill', bg: '#e0f2fe', color: '#0369a1' },
+  { key: 'total_usuarios',    label: 'Usuarios del sistema', icon: 'bi-person-badge-fill',       bg: '#fff1f2', color: '#be185d' },
+];
+
+const ESTADO_CONFIG = {
+  disponibles: { label: 'Disponible', fill: '#16a34a' },
+  reservadas:  { label: 'Reservada',  fill: '#d97706' },
+  alquiladas:  { label: 'Alquilada',  fill: '#1d4ed8' },
+  vendidas:    { label: 'Vendida',    fill: '#6b7280' },
+};
+
+async function loadStats() {
+  const res = await API.get('/stats');
+  if (!res?.success) return;
+  const s = res.data;
+
+  document.getElementById('stats-grid').innerHTML = STAT_CONFIG.map(cfg => `
+    <div class="stat-card">
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:${cfg.bg};color:${cfg.color}">
+          <i class="bi ${cfg.icon}"></i>
+        </div>
+        <div>
+          <div class="stat-value">${fmt(s[cfg.key] ?? 0)}</div>
+          <div class="stat-label">${cfg.label}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const total = s.total_propiedades || 1;
+  document.getElementById('prop-estados').innerHTML = Object.entries(ESTADO_CONFIG).map(([key, cfg]) => {
+    const val = s[key] || 0;
+    const pct = Math.round((val / total) * 100);
+    return `
+      <div class="progress-row">
+        <div class="progress-row-top">
+          <span style="font-size:.8rem;font-weight:600;color:var(--tx-2)">${cfg.label}</span>
+          <span style="font-size:.8rem;font-weight:700;color:var(--tx-1)">${fmt(val)} <span style="font-weight:400;color:var(--tx-4)">(${pct}%)</span></span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:${pct}%;background:${cfg.fill}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadRecentProps() {
+  const res = await API.get('/propiedades?limit=6&page=1');
+  const tbody = document.getElementById('recent-props');
+  if (!res?.success || !res.data.rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><i class="bi bi-building"></i>Sin propiedades</div></td></tr>';
+    return;
+  }
+  const estadoBadge = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' };
+  tbody.innerHTML = res.data.rows.map(p => `
+    <tr>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.titulo}">${p.titulo}</td>
+      <td>${p.tipo}</td>
+      <td><span class="badge ${estadoBadge[p.estado] || ''}">${p.estado}</span></td>
+    </tr>
+  `).join('');
+}
+
+loadStats();
+loadRecentProps();
+</script>
+</body>
+</html>

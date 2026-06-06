@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contratos — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Contratos</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="f-tipo" class="filter-input">
+          <option value="">Todos</option>
+          <option value="Venta">Venta</option>
+          <option value="Alquiler">Alquiler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-estado" class="filter-input">
+          <option value="">Todos</option>
+          <option value="Activo">Activo</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="filter-group" style="margin-left:auto">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-file-earmark-plus"></i> Generar contrato</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tipo</th>
+              <th>Propiedad</th>
+              <th>Cliente</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL GENERAR CONTRATO
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-contrato">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5>Generar contrato</h5>
+      <button class="btn-close" onclick="Modal.close('modal-contrato')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;font-size:.825rem;color:#92400e;margin-bottom:1.25rem">
+        <i class="bi bi-info-circle-fill"></i>
+        Este formulario genera un documento de contrato para imprimir o exportar. No se almacena en el sistema.
+      </div>
+      <form id="form-contrato" autocomplete="off">
+
+        <!-- Tipo y moneda -->
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipo <span style="color:#ef4444">*</span></label>
+            <select id="f-tipo-form" class="form-select" required>
+              <option value="">— Seleccionar —</option>
+              <option value="Venta">Venta</option>
+              <option value="Alquiler">Alquiler</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select id="f-moneda" class="form-select">
+              <option value="USD">USD — Dólar</option>
+              <option value="ARS">ARS — Peso argentino</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Propiedad -->
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Propiedad <span style="color:#ef4444">*</span></label>
+          <select id="f-propiedad" class="form-select" required>
+            <option value="">— Cargando propiedades… —</option>
+          </select>
+        </div>
+
+        <!-- Cliente -->
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Cliente <span style="color:#ef4444">*</span></label>
+          <select id="f-cliente" class="form-select" required>
+            <option value="">— Cargando clientes… —</option>
+          </select>
+        </div>
+
+        <!-- Fechas y monto -->
+        <div class="form-row-3" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Fecha inicio <span style="color:#ef4444">*</span></label>
+            <input id="f-inicio" type="date" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Fecha fin</label>
+            <input id="f-fin" type="date" class="form-control">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Monto <span style="color:#ef4444">*</span></label>
+            <input id="f-monto" type="number" class="form-control" placeholder="150000" min="0" step="0.01" required>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Observaciones</label>
+          <textarea id="f-obs" class="form-control" rows="3" placeholder="Condiciones especiales, aclaraciones..." style="resize:vertical"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-contrato')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-generar"><i class="bi bi-printer"></i> Generar contrato</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL VER DETALLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5>Detalle del contrato</h5>
+      <button class="btn-close" onclick="Modal.close('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalle-body"></div>
+    <div class="modal-footer" id="detalle-footer"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL CAMBIAR ESTADO
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-estado">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h5>Cambiar estado del contrato</h5>
+      <button class="btn-close" onclick="Modal.close('modal-estado')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="estado-info" style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;font-size:.825rem;color:#92400e;margin-bottom:1rem">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        Al <strong>finalizar o cancelar</strong> un contrato, la propiedad vuelve automáticamente a <strong>Disponible</strong>.
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Nuevo estado</label>
+        <select id="select-estado" class="form-select">
+          <option value="Activo">Activo</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+      </div>
+      <input type="hidden" id="estado-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-estado')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-estado">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Contratos');
+Modal.closeOnOverlay('modal-contrato');
+Modal.closeOnOverlay('modal-detalle');
+Modal.closeOnOverlay('modal-estado');
+
+let state = { page: 1, limit: 20, tipo: '', estado: '' };
+
+const ESTADO_STYLE = {
+  Activo:     { badge: 'badge-activo',     icon: 'bi-check-circle-fill' },
+  Finalizado: { badge: 'badge-inactivo',   icon: 'bi-check2-all' },
+  Cancelado:  { badge: 'badge-reservada',  icon: 'bi-x-circle-fill' },
+};
+const TIPO_STYLE = {
+  Venta:    { badge: 'badge-venta',    icon: 'bi-house-check' },
+  Alquiler: { badge: 'badge-alquiler', icon: 'bi-house-door' },
+};
+
+/* ── CARGAR TABLA ── */
+async function loadContratos() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.tipo)   qs.set('tipo',   state.tipo);
+  if (state.estado) qs.set('estado', state.estado);
+
+  const res = await API.get('/contratos?' + qs);
+  if (!res?.success) { Toast.error('Error al cargar contratos'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="bi bi-file-earmark-text"></i>Sin contratos registrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => {
+    const es = ESTADO_STYLE[c.estado] || {};
+    const ts = TIPO_STYLE[c.tipo]    || {};
+    return `
+    <tr>
+      <td class="text-muted">${c.id}</td>
+      <td><span class="badge ${ts.badge}"><i class="bi ${ts.icon}"></i> ${c.tipo}</span></td>
+      <td style="max-width:180px">
+        <div class="fw-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.propiedad_titulo}">${c.propiedad_titulo}</div>
+        <div class="text-muted" style="font-size:.75rem">${c.propiedad_ciudad}</div>
+      </td>
+      <td>
+        <div class="fw-600">${c.cliente_nombre} ${c.cliente_apellido || ''}</div>
+        <div class="text-muted" style="font-size:.75rem">${c.cliente_dni || c.cliente_email || ''}</div>
+      </td>
+      <td>${fmtDate(c.fecha_inicio)}</td>
+      <td>${c.fecha_fin ? fmtDate(c.fecha_fin) : '<span class="text-muted">Indefinido</span>'}</td>
+      <td class="fw-600">${c.moneda} ${fmt(c.monto)}</td>
+      <td><span class="badge ${es.badge}">${c.estado}</span></td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Ver detalle" onclick="verDetalle(${c.id})"><i class="bi bi-eye"></i></button>
+          ${c.estado === 'Activo' ? `
+            <button class="btn btn-outline btn-icon btn-sm" title="Cambiar estado" onclick="abrirEstado(${c.id},'${c.estado}')"><i class="bi bi-arrow-repeat"></i></button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadContratos(); });
+}
+
+/* ── FILTROS ── */
+document.getElementById('f-tipo').addEventListener('change',  e => { state.tipo   = e.target.value; state.page = 1; loadContratos(); });
+document.getElementById('f-estado').addEventListener('change', e => { state.estado = e.target.value; state.page = 1; loadContratos(); });
+
+/* ── CARGAR SELECTORES ── */
+async function cargarSelectores() {
+  const [resProp, resCli] = await Promise.all([
+    API.get('/propiedades?estado=Disponible&limit=200'),
+    API.get('/clientes?activo=true&limit=200'),
+  ]);
+
+  const selProp = document.getElementById('f-propiedad');
+  if (resProp?.success) {
+    selProp.innerHTML = '<option value="">— Seleccionar propiedad —</option>' +
+      resProp.data.rows.map(p => `<option value="${p.id}" data-titulo="${p.titulo}" data-direccion="${p.direccion}" data-ciudad="${p.ciudad}" data-moneda="${p.moneda}" data-precio="${p.precio}">${p.titulo} — ${p.ciudad} (${p.moneda} ${fmt(p.precio)})</option>`).join('');
+  }
+
+  const selCli = document.getElementById('f-cliente');
+  if (resCli?.success) {
+    selCli.innerHTML = '<option value="">— Seleccionar cliente —</option>' +
+      resCli.data.rows.map(c => `<option value="${c.id}" data-nombre="${c.nombre} ${c.apellido || ''}" data-dni="${c.dni_cuit || ''}" data-email="${c.email || ''}" data-telefono="${c.telefono || ''}" data-direccion="${c.direccion || ''}">${c.nombre} ${c.apellido || ''} ${c.dni_cuit ? '· '+c.dni_cuit : ''}</option>`).join('');
+  }
+}
+
+/* ── ABRIR MODAL GENERAR ── */
+document.getElementById('btn-nuevo').addEventListener('click', async () => {
+  document.getElementById('form-contrato').reset();
+  document.getElementById('f-inicio').value = new Date().toISOString().split('T')[0];
+  await cargarSelectores();
+  Modal.open('modal-contrato');
+});
+
+/* ── GENERAR DOCUMENTO (sin guardar) ── */
+document.getElementById('btn-generar').addEventListener('click', () => {
+  const tipo    = document.getElementById('f-tipo-form').value;
+  const moneda  = document.getElementById('f-moneda').value;
+  const inicio  = document.getElementById('f-inicio').value;
+  const monto   = document.getElementById('f-monto').value;
+  const propSel = document.getElementById('f-propiedad');
+  const cliSel  = document.getElementById('f-cliente');
+
+  if (!tipo || !propSel.value || !cliSel.value || !inicio || !monto) {
+    Toast.error('Completá los campos requeridos'); return;
+  }
+
+  const propOpt = propSel.options[propSel.selectedIndex];
+  const cliOpt  = cliSel.options[cliSel.selectedIndex];
+  const fin     = document.getElementById('f-fin').value;
+  const obs     = document.getElementById('f-obs').value.trim();
+
+  const prop = {
+    titulo:    propOpt.dataset.titulo,
+    direccion: propOpt.dataset.direccion,
+    ciudad:    propOpt.dataset.ciudad,
+  };
+  const cli = {
+    nombre:    cliOpt.dataset.nombre,
+    dni:       cliOpt.dataset.dni,
+    email:     cliOpt.dataset.email,
+    telefono:  cliOpt.dataset.telefono,
+    direccion: cliOpt.dataset.direccion,
+  };
+
+  const montoFmt = moneda + ' ' + Number(monto).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+  const hoy = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const docHTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Contrato de ${tipo}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Georgia, serif; font-size: 12pt; color: #1a1a1a; padding: 40px 60px; line-height: 1.6; }
+  h1 { text-align: center; font-size: 18pt; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #555; font-size: 10pt; margin-bottom: 32px; }
+  .section { margin-bottom: 24px; }
+  .section-title { font-weight: bold; font-size: 11pt; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #999; margin-bottom: 10px; padding-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  .field label { font-weight: bold; font-size: 10pt; }
+  .field span { font-size: 11pt; }
+  .obs-box { border: 1px solid #ccc; border-radius: 4px; padding: 12px; font-size: 11pt; min-height: 60px; }
+  .firma-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 48px; }
+  .firma { text-align: center; }
+  .firma-line { border-top: 1px solid #333; padding-top: 6px; font-size: 10pt; margin-top: 48px; }
+  .footer { text-align: center; font-size: 9pt; color: #888; margin-top: 32px; border-top: 1px solid #ddd; padding-top: 12px; }
+  @media print { body { padding: 20px 40px; } }
+</style>
+</head>
+<body>
+  <h1>Contrato de ${tipo}</h1>
+  <p class="subtitle">Generado el ${hoy} — Sistema Britos</p>
+
+  <div class="section">
+    <div class="section-title">Propiedad</div>
+    <div class="grid">
+      <div class="field"><label>Título:</label><br><span>${prop.titulo}</span></div>
+      <div class="field"><label>Ciudad:</label><br><span>${prop.ciudad}</span></div>
+      <div class="field" style="grid-column:1/-1"><label>Dirección:</label><br><span>${prop.direccion}</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Cliente</div>
+    <div class="grid">
+      <div class="field"><label>Nombre completo:</label><br><span>${cli.nombre}</span></div>
+      <div class="field"><label>DNI / CUIT:</label><br><span>${cli.dni || '—'}</span></div>
+      <div class="field"><label>Email:</label><br><span>${cli.email || '—'}</span></div>
+      <div class="field"><label>Teléfono:</label><br><span>${cli.telefono || '—'}</span></div>
+      ${cli.direccion ? `<div class="field" style="grid-column:1/-1"><label>Dirección:</label><br><span>${cli.direccion}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Condiciones económicas</div>
+    <div class="grid">
+      <div class="field"><label>Tipo de operación:</label><br><span>${tipo}</span></div>
+      <div class="field"><label>Monto:</label><br><span>${montoFmt}</span></div>
+      <div class="field"><label>Fecha de inicio:</label><br><span>${new Date(inicio + 'T12:00:00').toLocaleDateString('es-AR')}</span></div>
+      <div class="field"><label>Fecha de fin:</label><br><span>${fin ? new Date(fin + 'T12:00:00').toLocaleDateString('es-AR') : 'Sin vencimiento'}</span></div>
+    </div>
+  </div>
+
+  ${obs ? `<div class="section">
+    <div class="section-title">Observaciones</div>
+    <div class="obs-box">${obs}</div>
+  </div>` : ''}
+
+  <div class="firma-row">
+    <div class="firma">
+      <div class="firma-line">Firma del cliente<br><small>${cli.nombre}</small></div>
+    </div>
+    <div class="firma">
+      <div class="firma-line">Firma del representante<br><small>Sistema Britos</small></div>
+    </div>
+  </div>
+
+  <div class="footer">Documento generado por Sistema Britos — Solo para uso interno</div>
+
+  <script>window.onload = function() { window.print(); }<\/script>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(docHTML);
+  w.document.close();
+
+  Modal.close('modal-contrato');
+});
+
+/* ── VER DETALLE ── */
+async function verDetalle(id) {
+  Modal.open('modal-detalle');
+  document.getElementById('detalle-body').innerHTML   = '<div class="spinner"></div>';
+  document.getElementById('detalle-footer').innerHTML = '';
+  const res = await API.get('/contratos/' + id);
+  if (!res?.success) return;
+  const c = res.data;
+  const es = ESTADO_STYLE[c.estado] || {};
+  const ts = TIPO_STYLE[c.tipo]    || {};
+
+  document.getElementById('detalle-body').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+      <span class="badge ${ts.badge}" style="font-size:.8rem"><i class="bi ${ts.icon}"></i> ${c.tipo}</span>
+      <span class="badge ${es.badge}" style="font-size:.8rem">${c.estado}</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+      <div class="card" style="padding:1rem">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.625rem"><i class="bi bi-building"></i> Propiedad</div>
+        <div class="fw-600">${c.propiedad_titulo}</div>
+        <div class="text-muted" style="font-size:.8rem">${c.propiedad_direccion}</div>
+        <div class="text-muted" style="font-size:.8rem">${c.propiedad_ciudad}</div>
+      </div>
+      <div class="card" style="padding:1rem">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.625rem"><i class="bi bi-person"></i> Cliente</div>
+        <div class="fw-600">${c.cliente_nombre} ${c.cliente_apellido || ''}</div>
+        <div class="text-muted" style="font-size:.8rem">${c.cliente_email || ''}</div>
+        <div class="text-muted" style="font-size:.8rem">${c.cliente_telefono || ''}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem 1.5rem;margin-bottom:1rem">
+      ${df('Monto',       `<strong>${c.moneda} ${fmt(c.monto)}</strong>`)}
+      ${df('Inicio',      fmtDate(c.fecha_inicio))}
+      ${df('Vencimiento', c.fecha_fin ? fmtDate(c.fecha_fin) : 'Sin vencimiento')}
+      ${df('Registrado',  fmtDate(c.created_at))}
+    </div>
+
+    ${c.observaciones ? `
+      <div style="background:#f8fafc;border-radius:8px;padding:.875rem;font-size:.875rem;color:#475569;border:1px solid #e2e8f0">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.4rem">Observaciones</div>
+        ${c.observaciones}
+      </div>` : ''}
+  `;
+
+  if (c.estado === 'Activo') {
+    document.getElementById('detalle-footer').innerHTML = `
+      <button class="btn btn-warning" onclick="Modal.close('modal-detalle');abrirEstado(${c.id},'${c.estado}')"><i class="bi bi-arrow-repeat"></i> Cambiar estado</button>
+    `;
+  }
+}
+function df(label, value) {
+  return `<div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:.2rem">${label}</div><div>${value}</div></div>`;
+}
+
+/* ── CAMBIAR ESTADO ── */
+function abrirEstado(id, estadoActual) {
+  document.getElementById('estado-id').value     = id;
+  document.getElementById('select-estado').value = estadoActual;
+  Modal.open('modal-estado');
+}
+
+document.getElementById('btn-confirmar-estado').addEventListener('click', async () => {
+  const id     = document.getElementById('estado-id').value;
+  const estado = document.getElementById('select-estado').value;
+  const res = await API.patch('/contratos/' + id + '/estado', { estado });
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success('Estado actualizado');
+  Modal.close('modal-estado');
+  loadContratos();
+});
+
+loadContratos();
+</script>
+</body>
+</html>

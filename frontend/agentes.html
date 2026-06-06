@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentes — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Agentes</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group" style="flex:1;min-width:200px">
+        <label>Buscar</label>
+        <div style="position:relative">
+          <i class="bi bi-search" style="position:absolute;left:.625rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem"></i>
+          <input id="f-search" class="filter-input" placeholder="Nombre, apellido, DNI, matrícula..." style="padding-left:2rem;width:100%">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-activo" class="filter-input">
+          <option value="">Todos</option>
+          <option value="true">Activos</option>
+          <option value="false">Inactivos</option>
+        </select>
+      </div>
+      <div class="filter-group" style="justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-outline btn-sm" id="btn-clear"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <div class="filter-group" style="margin-left:auto;justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-plus-lg"></i> Agente</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>DNI / CUIT</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Matrícula</th>
+              <th>Comisión %</th>
+              <th>Estado</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="10"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CREAR / EDITAR -->
+<div class="modal-overlay" id="modal-agente">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5 id="modal-title">Agente</h5>
+      <button class="btn-close" onclick="Modal.close('modal-agente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-agente" autocomplete="off">
+        <input type="hidden" id="f-id">
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Nombre <span style="color:#ef4444">*</span></label>
+            <input id="f-nombre" type="text" class="form-control" placeholder="Nombre" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Apellido <span style="color:#ef4444">*</span></label>
+            <input id="f-apellido" type="text" class="form-control" placeholder="Apellido" required>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">DNI / CUIT</label>
+            <input id="f-dni" type="text" class="form-control" placeholder="20-12345678-9">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Matrícula</label>
+            <input id="f-matricula" type="text" class="form-control" placeholder="MAT-0001">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Email</label>
+            <input id="f-email" type="email" class="form-control" placeholder="agente@ejemplo.com">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Teléfono</label>
+            <input id="f-telefono" type="text" class="form-control" placeholder="351-555-0101">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Comisión (%)</label>
+          <input id="f-comision" type="number" class="form-control" placeholder="3" min="0" max="100" step="0.01">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-agente')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER DETALLE -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5>Detalle del agente</h5>
+      <button class="btn-close" onclick="Modal.close('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalle-body">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Agentes');
+Modal.closeOnOverlay('modal-agente');
+Modal.closeOnOverlay('modal-detalle');
+
+let state = { page: 1, limit: 20, search: '', activo: '' };
+
+async function loadAgentes() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.search) qs.set('search', state.search);
+  if (state.activo) qs.set('activo', state.activo);
+
+  const res = await API.get('/agentes?' + qs.toString());
+  if (!res?.success) { Toast.error('Error al cargar agentes'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><i class="bi bi-person-badge"></i>Sin agentes registrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(a => `
+    <tr>
+      <td class="text-muted">${a.id}</td>
+      <td class="fw-600">${a.nombre}</td>
+      <td>${a.apellido}</td>
+      <td class="text-muted">${a.dni_cuit || '—'}</td>
+      <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.email || '—'}</td>
+      <td class="text-muted">${a.telefono || '—'}</td>
+      <td class="text-muted">${a.matricula || '—'}</td>
+      <td class="text-muted">${a.comision_pct != null ? a.comision_pct + '%' : '—'}</td>
+      <td><span class="badge badge-${a.activo ? 'activo' : 'inactivo'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Ver detalle" onclick="verDetalle(${a.id})"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-outline btn-icon btn-sm" title="Editar" onclick="editarAgente(${a.id})"><i class="bi bi-pencil"></i></button>
+          ${a.activo
+            ? `<button class="btn btn-outline btn-icon btn-sm" title="Desactivar" style="color:#ef4444" onclick="toggleActivo(${a.id},false)"><i class="bi bi-person-slash"></i></button>`
+            : `<button class="btn btn-outline btn-icon btn-sm" title="Activar" style="color:#22c55e" onclick="toggleActivo(${a.id},true)"><i class="bi bi-person-check"></i></button>`
+          }
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadAgentes(); });
+}
+
+// FILTROS
+let searchTimer;
+document.getElementById('f-search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = e.target.value.trim(); state.page = 1; loadAgentes(); }, 350);
+});
+document.getElementById('f-activo').addEventListener('change', e => { state.activo = e.target.value; state.page = 1; loadAgentes(); });
+document.getElementById('btn-clear').addEventListener('click', () => {
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-activo').value = '';
+  state = { ...state, search: '', activo: '', page: 1 };
+  loadAgentes();
+});
+
+// NUEVO
+document.getElementById('btn-nuevo').addEventListener('click', () => {
+  document.getElementById('modal-title').textContent = 'Nuevo agente';
+  document.getElementById('form-agente').reset();
+  document.getElementById('f-id').value = '';
+  Modal.open('modal-agente');
+});
+
+// VER DETALLE
+async function verDetalle(id) {
+  Modal.open('modal-detalle');
+  document.getElementById('detalle-body').innerHTML = '<div class="spinner"></div>';
+  const res = await API.get('/agentes/' + id);
+  if (!res?.success) { document.getElementById('detalle-body').innerHTML = '<p style="color:#ef4444">Error al cargar</p>'; return; }
+  const a = res.data;
+  document.getElementById('detalle-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.5rem">
+      ${df('Nombre', a.nombre)}
+      ${df('Apellido', a.apellido)}
+      ${df('DNI / CUIT', a.dni_cuit || '—')}
+      ${df('Matrícula', a.matricula || '—')}
+      ${df('Email', a.email || '—')}
+      ${df('Teléfono', a.telefono || '—')}
+      ${df('Comisión', a.comision_pct != null ? a.comision_pct + '%' : '—')}
+      ${df('Estado', `<span class="badge badge-${a.activo ? 'activo' : 'inactivo'}">${a.activo ? 'Activo' : 'Inactivo'}</span>`)}
+      ${df('Alta', fmtDate(a.created_at))}
+    </div>
+  `;
+}
+function df(label, value) {
+  return `<div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:.2rem">${label}</div><div style="font-size:.875rem">${value}</div></div>`;
+}
+
+// EDITAR
+async function editarAgente(id) {
+  const res = await API.get('/agentes/' + id);
+  if (!res?.success) { Toast.error('No se pudo cargar el agente'); return; }
+  const a = res.data;
+  document.getElementById('modal-title').textContent = 'Editar agente';
+  document.getElementById('f-id').value       = a.id;
+  document.getElementById('f-nombre').value   = a.nombre;
+  document.getElementById('f-apellido').value = a.apellido;
+  document.getElementById('f-dni').value      = a.dni_cuit || '';
+  document.getElementById('f-matricula').value = a.matricula || '';
+  document.getElementById('f-email').value    = a.email || '';
+  document.getElementById('f-telefono').value = a.telefono || '';
+  document.getElementById('f-comision').value = a.comision_pct != null ? a.comision_pct : '';
+  Modal.open('modal-agente');
+}
+
+// GUARDAR
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const id      = document.getElementById('f-id').value;
+  const nombre  = document.getElementById('f-nombre').value.trim();
+  const apellido = document.getElementById('f-apellido').value.trim();
+  if (!nombre || !apellido) { Toast.error('Nombre y apellido son requeridos'); return; }
+
+  const comision = document.getElementById('f-comision').value;
+  const body = {
+    nombre, apellido,
+    dni_cuit:    document.getElementById('f-dni').value.trim()      || undefined,
+    matricula:   document.getElementById('f-matricula').value.trim()  || undefined,
+    email:       document.getElementById('f-email').value.trim()     || undefined,
+    telefono:    document.getElementById('f-telefono').value.trim()  || undefined,
+    comision_pct: comision !== '' ? parseFloat(comision) : undefined,
+  };
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = id
+    ? await API.put('/agentes/' + id, body)
+    : await API.post('/agentes', body);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar';
+
+  if (!res?.success) { Toast.error(res?.message || 'Error al guardar'); return; }
+  Toast.success(id ? 'Agente actualizado' : 'Agente creado');
+  Modal.close('modal-agente');
+  loadAgentes();
+});
+
+// TOGGLE ACTIVO
+async function toggleActivo(id, activar) {
+  const res = await API.patch(`/agentes/${id}/${activar ? 'activar' : 'desactivar'}`);
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success(activar ? 'Agente activado' : 'Agente desactivado');
+  loadAgentes();
+}
+
+loadAgentes();
+</script>
+</body>
+</html>

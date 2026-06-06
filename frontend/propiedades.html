@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Propiedades — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Propiedades</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="f-tipo" class="filter-input">
+          <option value="">Todos los tipos</option>
+          <option>Casa</option><option>Departamento</option><option>Local</option>
+          <option>Terreno</option><option>Oficina</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Operación</label>
+        <select id="f-op" class="filter-input">
+          <option value="">Todas</option>
+          <option value="Venta">Venta</option>
+          <option value="Alquiler">Alquiler</option>
+          <option value="Venta y Alquiler">Venta y Alquiler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-estado" class="filter-input">
+          <option value="">Todos</option>
+          <option>Disponible</option><option>Reservada</option>
+          <option>Alquilada</option><option>Vendida</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Ciudad</label>
+        <input id="f-ciudad" class="filter-input" placeholder="Ej: Córdoba" style="width:120px">
+      </div>
+      <div class="filter-group">
+        <label>Precio min</label>
+        <input id="f-pmin" type="number" class="filter-input" placeholder="0" style="width:90px">
+      </div>
+      <div class="filter-group">
+        <label>Precio max</label>
+        <input id="f-pmax" type="number" class="filter-input" placeholder="∞" style="width:90px">
+      </div>
+      <div class="filter-group" style="justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-outline btn-sm" id="btn-clear"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <div class="filter-group" style="margin-left:auto;justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nueva"><i class="bi bi-plus-lg"></i> Nueva propiedad</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Título</th>
+              <th>Tipo</th>
+              <th>Operación</th>
+              <th>Ciudad</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              <th>Propietario</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CREAR / EDITAR -->
+<div class="modal-overlay" id="modal-prop">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5 id="modal-title">Nueva propiedad</h5>
+      <button class="btn-close" onclick="Modal.close('modal-prop')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-prop" autocomplete="off">
+        <input type="hidden" id="f-id">
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipo <span style="color:#ef4444">*</span></label>
+            <select id="f-tipo-form" class="form-select" required>
+              <option value="">— Seleccionar —</option>
+              <option>Casa</option><option>Departamento</option><option>Local</option>
+              <option>Terreno</option><option>Oficina</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Operación <span style="color:#ef4444">*</span></label>
+            <select id="f-operacion" class="form-select" required>
+              <option value="">— Seleccionar —</option>
+              <option value="Venta">Venta</option>
+              <option value="Alquiler">Alquiler</option>
+              <option value="Venta y Alquiler">Venta y Alquiler</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Título <span style="color:#ef4444">*</span></label>
+          <input id="f-titulo" type="text" class="form-control" placeholder="Ej: Departamento 2 ambientes Güemes" required>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Dirección <span style="color:#ef4444">*</span></label>
+            <input id="f-direccion" type="text" class="form-control" placeholder="Güemes 1234" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Ciudad <span style="color:#ef4444">*</span></label>
+            <input id="fm-ciudad" type="text" class="form-control" placeholder="Córdoba" required>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Provincia <span style="color:#ef4444">*</span></label>
+            <input id="f-provincia" type="text" class="form-control" placeholder="Córdoba" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Propietario</label>
+            <select id="f-propietario" class="form-select">
+              <option value="">— Sin propietario —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-3" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Precio <span style="color:#ef4444">*</span></label>
+            <input id="f-precio" type="number" class="form-control" placeholder="150000" min="0" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select id="f-moneda" class="form-select">
+              <option value="USD">USD</option>
+              <option value="ARS">ARS</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Ambientes</label>
+            <input id="f-ambientes" type="number" class="form-control" placeholder="2" min="0">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Superficie (m²)</label>
+            <input id="f-superficie" type="number" class="form-control" placeholder="65" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="margin:0" id="grupo-estado">
+            <label class="form-label">Estado</label>
+            <select id="f-estado-form" class="form-select">
+              <option>Disponible</option><option>Reservada</option>
+              <option>Alquilada</option><option>Vendida</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Descripción</label>
+          <textarea id="f-descripcion" class="form-control" rows="3" placeholder="Descripción de la propiedad..." style="resize:vertical"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-prop')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER DETALLE -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5>Detalle de la propiedad</h5>
+      <button class="btn-close" onclick="Modal.close('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalle-body"></div>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR ESTADO -->
+<div class="modal-overlay" id="modal-estado">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h5>Cambiar estado</h5>
+      <button class="btn-close" onclick="Modal.close('modal-estado')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.875rem;color:#475569" id="estado-prop-nombre"></p>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Nuevo estado</label>
+        <select id="select-nuevo-estado" class="form-select">
+          <option>Disponible</option><option>Reservada</option>
+          <option>Alquilada</option><option>Vendida</option>
+        </select>
+      </div>
+      <input type="hidden" id="estado-prop-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-estado')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-estado">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Propiedades');
+Modal.closeOnOverlay('modal-prop');
+Modal.closeOnOverlay('modal-detalle');
+Modal.closeOnOverlay('modal-estado');
+
+let state = { page: 1, limit: 20, tipo: '', operacion: '', estado: '', ciudad: '', precio_min: '', precio_max: '' };
+let clientes = [];
+
+async function loadClientes() {
+  const res = await API.get('/clientes?limit=200&activo=true');
+  if (res?.success) {
+    clientes = res.data.rows;
+    const sel = document.getElementById('f-propietario');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Sin propietario —</option>' +
+      clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.apellido || ''} ${c.dni_cuit ? '('+c.dni_cuit+')' : ''}</option>`).join('');
+    if (prev) sel.value = prev;
+  }
+}
+
+const ESTADO_BADGE = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' };
+const OP_BADGE     = { Venta:'badge-venta', Alquiler:'badge-alquiler', 'Venta y Alquiler':'badge-venta' };
+
+async function loadPropiedades() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.tipo)      qs.set('tipo',      state.tipo);
+  if (state.operacion) qs.set('operacion', state.operacion);
+  if (state.estado)    qs.set('estado',    state.estado);
+  if (state.ciudad)    qs.set('ciudad',    state.ciudad);
+  if (state.precio_min) qs.set('precio_min', state.precio_min);
+  if (state.precio_max) qs.set('precio_max', state.precio_max);
+
+  const res = await API.get('/propiedades?' + qs.toString());
+  if (!res?.success) { Toast.error('Error al cargar propiedades'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="bi bi-building"></i>Sin propiedades encontradas</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(p => `
+    <tr>
+      <td class="text-muted">${p.id}</td>
+      <td style="max-width:200px">
+        <div class="fw-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.titulo}">${p.titulo}</div>
+        <div class="text-muted" style="font-size:.75rem">${p.direccion}</div>
+      </td>
+      <td>${p.tipo}</td>
+      <td><span class="badge ${OP_BADGE[p.operacion] || ''}">${p.operacion}</span></td>
+      <td>${p.ciudad}</td>
+      <td class="fw-600">${p.moneda} ${fmt(p.precio)}</td>
+      <td><span class="badge ${ESTADO_BADGE[p.estado] || ''}">${p.estado}</span></td>
+      <td class="text-muted" style="font-size:.8rem">${p.propietario_nombre ? p.propietario_nombre + ' ' + (p.propietario_apellido||'') : '—'}</td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Ver detalle"    onclick="verDetalle(${p.id})"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-outline btn-icon btn-sm" title="Editar"         onclick="editarProp(${p.id})"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-outline btn-icon btn-sm" title="Cambiar estado" onclick="abrirEstado(${p.id},'${p.estado}','${p.titulo.replace(/'/g,"\\'")}')"><i class="bi bi-arrow-repeat"></i></button>
+          ${p.activo
+            ? `<button class="btn btn-outline btn-icon btn-sm" title="Desactivar" style="color:#ef4444" onclick="toggleActivo(${p.id},false)"><i class="bi bi-trash"></i></button>`
+            : `<button class="btn btn-outline btn-icon btn-sm" title="Activar" style="color:#22c55e" onclick="toggleActivo(${p.id},true)"><i class="bi bi-arrow-counterclockwise"></i></button>`
+          }
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadPropiedades(); });
+}
+
+// FILTROS
+let cityTimer;
+['f-tipo','f-op','f-estado'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    const map = { 'f-tipo':'tipo', 'f-op':'operacion', 'f-estado':'estado' };
+    state[map[id]] = e.target.value; state.page = 1; loadPropiedades();
+  });
+});
+document.getElementById('f-ciudad').addEventListener('input', e => {
+  clearTimeout(cityTimer);
+  cityTimer = setTimeout(() => { state.ciudad = e.target.value.trim(); state.page = 1; loadPropiedades(); }, 350);
+});
+['f-pmin','f-pmax'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    const map = { 'f-pmin':'precio_min', 'f-pmax':'precio_max' };
+    state[map[id]] = e.target.value; state.page = 1; loadPropiedades();
+  });
+});
+document.getElementById('btn-clear').addEventListener('click', () => {
+  ['f-tipo','f-op','f-estado'].forEach(id => document.getElementById(id).value = '');
+  ['f-ciudad','f-pmin','f-pmax'].forEach(id => document.getElementById(id).value = '');
+  state = { ...state, tipo:'', operacion:'', estado:'', ciudad:'', precio_min:'', precio_max:'', page:1 };
+  loadPropiedades();
+});
+
+// NUEVO
+document.getElementById('btn-nueva').addEventListener('click', async () => {
+  document.getElementById('modal-title').textContent = 'Nueva propiedad';
+  document.getElementById('form-prop').reset();
+  document.getElementById('f-id').value = '';
+  document.getElementById('grupo-estado').style.display = 'none';
+  await loadClientes();
+  Modal.open('modal-prop');
+});
+
+// VER DETALLE
+async function verDetalle(id) {
+  Modal.open('modal-detalle');
+  document.getElementById('detalle-body').innerHTML = '<div class="spinner"></div>';
+  const res = await API.get('/propiedades/' + id);
+  if (!res?.success) return;
+  const p = res.data;
+  document.getElementById('detalle-body').innerHTML = `
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.5rem">
+        <span class="badge ${ESTADO_BADGE[p.estado]||''}" style="font-size:.8rem">${p.estado}</span>
+        <span class="badge ${OP_BADGE[p.operacion]||''}" style="font-size:.8rem">${p.operacion}</span>
+        <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.8rem">${p.tipo}</span>
+      </div>
+      <h5 style="margin:0;font-weight:700">${p.titulo}</h5>
+      <p class="text-muted" style="margin:.25rem 0 0;font-size:.875rem">${p.direccion}, ${p.ciudad}, ${p.provincia}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem 1.5rem;margin-bottom:1.25rem">
+      ${dfield('Precio', `<strong>${p.moneda} ${fmt(p.precio)}</strong>`)}
+      ${dfield('Superficie', p.superficie_m2 ? fmt(p.superficie_m2,2)+' m²' : '—')}
+      ${dfield('Ambientes', p.ambientes || '—')}
+      ${dfield('Propietario', p.propietario_nombre ? `${p.propietario_nombre} ${p.propietario_apellido||''}` : '—')}
+      ${dfield('Teléfono', p.propietario_telefono || '—')}
+      ${dfield('Alta', fmtDate(p.created_at))}
+    </div>
+    ${p.descripcion ? `<div style="background:#f8fafc;border-radius:8px;padding:.875rem;font-size:.875rem;color:#475569">${p.descripcion}</div>` : ''}
+  `;
+}
+function dfield(label, value) {
+  return `<div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:.2rem">${label}</div><div>${value}</div></div>`;
+}
+
+// EDITAR
+async function editarProp(id) {
+  const res = await API.get('/propiedades/' + id);
+  if (!res?.success) { Toast.error('No se pudo cargar la propiedad'); return; }
+  const p = res.data;
+  document.getElementById('modal-title').textContent = 'Editar propiedad';
+  document.getElementById('f-id').value           = p.id;
+  document.getElementById('f-tipo-form').value    = p.tipo;
+  document.getElementById('f-operacion').value    = p.operacion;
+  document.getElementById('f-titulo').value       = p.titulo;
+  document.getElementById('f-direccion').value    = p.direccion;
+  document.getElementById('fm-ciudad').value       = p.ciudad;
+  document.getElementById('f-provincia').value    = p.provincia;
+  document.getElementById('f-precio').value       = p.precio;
+  document.getElementById('f-moneda').value       = p.moneda;
+  document.getElementById('f-ambientes').value    = p.ambientes || '';
+  document.getElementById('f-superficie').value   = p.superficie_m2 || '';
+  document.getElementById('f-descripcion').value  = p.descripcion || '';
+  document.getElementById('f-estado-form').value  = p.estado;
+  document.getElementById('grupo-estado').style.display = '';
+  await loadClientes();
+  document.getElementById('f-propietario').value  = p.propietario_id || '';
+  Modal.open('modal-prop');
+}
+
+// GUARDAR
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const id = document.getElementById('f-id').value;
+  const tipo      = document.getElementById('f-tipo-form').value;
+  const operacion = document.getElementById('f-operacion').value;
+  const titulo    = document.getElementById('f-titulo').value.trim();
+  const direccion = document.getElementById('f-direccion').value.trim();
+  const ciudad    = document.getElementById('fm-ciudad').value.trim();
+  const provincia = document.getElementById('f-provincia').value.trim();
+  const precio    = document.getElementById('f-precio').value;
+
+  if (!tipo || !operacion || !titulo || !direccion || !ciudad || !provincia || !precio) {
+    Toast.error('Completá los campos requeridos'); return;
+  }
+
+  const body = {
+    tipo, operacion, titulo, direccion, ciudad, provincia,
+    precio: parseFloat(precio),
+    moneda:        document.getElementById('f-moneda').value,
+    ambientes:     document.getElementById('f-ambientes').value   ? parseInt(document.getElementById('f-ambientes').value)   : undefined,
+    superficie_m2: document.getElementById('f-superficie').value  ? parseFloat(document.getElementById('f-superficie').value): undefined,
+    descripcion:   document.getElementById('f-descripcion').value.trim() || undefined,
+    propietario_id: document.getElementById('f-propietario').value ? parseInt(document.getElementById('f-propietario').value) : undefined,
+  };
+  if (id) body.estado = document.getElementById('f-estado-form').value;
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = id ? await API.put('/propiedades/' + id, body) : await API.post('/propiedades', body);
+
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar';
+
+  if (!res?.success) { Toast.error(res?.message || 'Error al guardar'); return; }
+  Toast.success(id ? 'Propiedad actualizada' : 'Propiedad creada');
+  Modal.close('modal-prop');
+  loadPropiedades();
+});
+
+// CAMBIAR ESTADO
+function abrirEstado(id, estadoActual, titulo) {
+  document.getElementById('estado-prop-id').value     = id;
+  document.getElementById('estado-prop-nombre').textContent = titulo;
+  document.getElementById('select-nuevo-estado').value = estadoActual;
+  Modal.open('modal-estado');
+}
+document.getElementById('btn-confirmar-estado').addEventListener('click', async () => {
+  const id     = document.getElementById('estado-prop-id').value;
+  const estado = document.getElementById('select-nuevo-estado').value;
+  const res = await API.patch('/propiedades/' + id + '/estado', { estado });
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success('Estado actualizado');
+  Modal.close('modal-estado');
+  loadPropiedades();
+});
+
+// TOGGLE ACTIVO
+async function toggleActivo(id, activar) {
+  const res = await API.patch(`/propiedades/${id}/${activar ? 'activar' : 'desactivar'}`);
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success(activar ? 'Propiedad activada' : 'Propiedad desactivada');
+  loadPropiedades();
+}
+
+loadPropiedades();
+</script>
+</body>
+</html>

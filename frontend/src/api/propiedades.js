@@ -1,0 +1,7 @@
+import client from './client'
+export const getPropiedades    = (p) => client.get('/propiedades', { params: p })
+export const getPropiedad      = (id) => client.get(`/propiedades/${id}`)
+export const createPropiedad   = (d)  => client.post('/propiedades', d)
+export const updatePropiedad   = (id, d) => client.put(`/propiedades/${id}`, d)
+export const activarPropiedad  = (id) => client.patch(`/propiedades/${id}/activar`)
+export const desactivarPropiedad = (id) => client.patch(`/propiedades/${id}/desactivar`)

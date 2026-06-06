@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Administración de Usuarios</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-activo" class="filter-input">
+          <option value="">Todos</option>
+          <option value="true">Activos</option>
+          <option value="false">Inactivos</option>
+        </select>
+      </div>
+      <div class="filter-group" style="margin-left:auto">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-person-plus"></i> Nuevo usuario</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre completo</th>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Alta</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CREAR / EDITAR -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5 id="modal-title">Nuevo usuario</h5>
+      <button class="btn-close" onclick="Modal.close('modal-usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-usuario" autocomplete="off">
+        <input type="hidden" id="f-id">
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Nombre completo <span style="color:#ef4444">*</span></label>
+            <input id="f-fullname" type="text" class="form-control" placeholder="María Britos" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Usuario <span style="color:#ef4444">*</span></label>
+            <input id="f-username" type="text" class="form-control" placeholder="mbritos" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Email <span style="color:#ef4444">*</span></label>
+          <input id="f-email" type="email" class="form-control" placeholder="maria@sistemabitos.com" required>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Rol <span style="color:#ef4444">*</span></label>
+            <select id="f-role" class="form-select" required>
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0" id="grupo-password">
+            <label class="form-label" id="label-password">Contraseña <span style="color:#ef4444">*</span></label>
+            <div style="position:relative">
+              <input id="f-password" type="password" class="form-control" placeholder="Mínimo 8 caracteres" style="padding-right:2.5rem">
+              <button type="button" id="toggle-pwd" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:0">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <div id="pwd-hint" class="text-muted" style="font-size:.72rem;margin-top:.25rem"></div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE / PERMISOS -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5>Perfil de usuario</h5>
+      <button class="btn-close" onclick="Modal.close('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalle-body"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Usuarios');
+Modal.closeOnOverlay('modal-usuario');
+Modal.closeOnOverlay('modal-detalle');
+
+const meId = API.getUser()?.id;
+let state  = { page: 1, limit: 20, activo: '' };
+let roles  = [];
+
+const ROL_COLORS = { Admin:'#7c3aed', Ventas:'#1d4ed8', Alquileres:'#0369a1', Contabilidad:'#a16207' };
+
+/* ── CARGAR ROLES ── */
+async function cargarRoles() {
+  if (roles.length) return;
+  const res = await API.get('/roles');
+  if (res?.success) {
+    roles = res.data;
+    document.getElementById('f-role').innerHTML =
+      '<option value="">— Seleccionar —</option>' +
+      roles.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+  }
+}
+
+/* ── TABLA ── */
+async function loadUsuarios() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.activo) qs.set('activo', state.activo);
+
+  const res = await API.get('/usuarios?' + qs);
+  if (!res?.success) { Toast.error('Error al cargar usuarios'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-person-x"></i>Sin usuarios encontrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(u => {
+    const esYo   = u.id === meId;
+    const color  = ROL_COLORS[u.role_nombre] || '#475569';
+    return `
+    <tr ${esYo ? 'style="background:#faf5ff"' : ''}>
+      <td class="text-muted">${u.id}</td>
+      <td>
+        <div class="d-flex align-center gap-2">
+          <div style="width:32px;height:32px;border-radius:50%;background:${color}20;color:${color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">
+            ${u.username.slice(0,2).toUpperCase()}
+          </div>
+          <div>
+            <div class="fw-600">${u.full_name} ${esYo ? '<span style="font-size:.7rem;color:#7c3aed">(vos)</span>' : ''}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-muted">${u.username}</td>
+      <td class="text-muted" style="font-size:.8rem">${u.email}</td>
+      <td><span class="badge" style="background:${color}18;color:${color}">${u.role_nombre}</span></td>
+      <td><span class="badge badge-${u.activo ? 'activo' : 'inactivo'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td class="text-muted">${fmtDate(u.created_at)}</td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Ver permisos" onclick="verDetalle(${u.id})"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-outline btn-icon btn-sm" title="Editar" onclick="editarUsuario(${u.id})"><i class="bi bi-pencil"></i></button>
+          ${!esYo ? (u.activo
+            ? `<button class="btn btn-outline btn-icon btn-sm" title="Desactivar" style="color:#ef4444" onclick="toggleActivo(${u.id},false)"><i class="bi bi-person-slash"></i></button>`
+            : `<button class="btn btn-outline btn-icon btn-sm" title="Activar" style="color:#22c55e" onclick="toggleActivo(${u.id},true)"><i class="bi bi-person-check"></i></button>`
+          ) : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadUsuarios(); });
+}
+
+/* ── FILTRO ── */
+document.getElementById('f-activo').addEventListener('change', e => { state.activo = e.target.value; state.page = 1; loadUsuarios(); });
+
+/* ── TOGGLE PASSWORD ── */
+document.getElementById('toggle-pwd').addEventListener('click', function() {
+  const input = document.getElementById('f-password');
+  const icon  = this.querySelector('i');
+  input.type  = input.type === 'password' ? 'text' : 'password';
+  icon.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+});
+
+/* ── NUEVO ── */
+document.getElementById('btn-nuevo').addEventListener('click', async () => {
+  document.getElementById('modal-title').textContent = 'Nuevo usuario';
+  document.getElementById('form-usuario').reset();
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-username').disabled = false;
+  document.getElementById('label-password').innerHTML = 'Contraseña <span style="color:#ef4444">*</span>';
+  document.getElementById('pwd-hint').textContent = 'Mínimo 8 caracteres';
+  await cargarRoles();
+  Modal.open('modal-usuario');
+});
+
+/* ── VER DETALLE ── */
+async function verDetalle(id) {
+  Modal.open('modal-detalle');
+  document.getElementById('detalle-body').innerHTML = '<div class="spinner"></div>';
+  const res = await API.get('/usuarios/' + id);
+  if (!res?.success) return;
+  const u = res.data;
+  const color = ROL_COLORS[u.role_nombre] || '#475569';
+
+  // Obtener permisos del rol
+  const resRol = await API.get('/roles/' + u.role_id);
+  const permisos = resRol?.success ? resRol.data.permisos : [];
+
+  document.getElementById('detalle-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid #e2e8f0">
+      <div style="width:56px;height:56px;border-radius:50%;background:${color}20;color:${color};display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;flex-shrink:0">
+        ${u.username.slice(0,2).toUpperCase()}
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:1rem">${u.full_name}</div>
+        <div class="text-muted" style="font-size:.825rem">@${u.username} · ${u.email}</div>
+        <div style="margin-top:.35rem">
+          <span class="badge" style="background:${color}18;color:${color}">${u.role_nombre}</span>
+          <span class="badge badge-${u.activo?'activo':'inactivo'}" style="margin-left:.35rem">${u.activo?'Activo':'Inactivo'}</span>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.625rem">
+      Permisos del rol (${permisos.length})
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.375rem">
+      ${permisos.map(p => `<span class="badge" style="background:#f1f5f9;color:#475569;font-size:.72rem">${p.nombre}</span>`).join('')}
+      ${!permisos.length ? '<span class="text-muted" style="font-size:.8rem">Sin permisos asignados</span>' : ''}
+    </div>
+  `;
+}
+
+/* ── EDITAR ── */
+async function editarUsuario(id) {
+  await cargarRoles();
+  const res = await API.get('/usuarios/' + id);
+  if (!res?.success) { Toast.error('No se pudo cargar el usuario'); return; }
+  const u = res.data;
+
+  document.getElementById('modal-title').textContent = 'Editar usuario';
+  document.getElementById('f-id').value       = u.id;
+  document.getElementById('f-fullname').value = u.full_name;
+  document.getElementById('f-username').value = u.username;
+  document.getElementById('f-username').disabled = true;
+  document.getElementById('f-email').value    = u.email;
+  document.getElementById('f-role').value     = u.role_id;
+  document.getElementById('f-password').value = '';
+  document.getElementById('label-password').innerHTML = 'Nueva contraseña <span class="text-muted" style="font-size:.75rem">(opcional)</span>';
+  document.getElementById('pwd-hint').textContent = 'Dejá en blanco para no cambiarla';
+
+  Modal.open('modal-usuario');
+}
+
+/* ── GUARDAR ── */
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const id       = document.getElementById('f-id').value;
+  const fullName = document.getElementById('f-fullname').value.trim();
+  const username = document.getElementById('f-username').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const roleId   = document.getElementById('f-role').value;
+  const password = document.getElementById('f-password').value;
+
+  if (!fullName || !email || !roleId) { Toast.error('Completá los campos requeridos'); return; }
+  if (!id && (!username || !password)) { Toast.error('Usuario y contraseña son requeridos'); return; }
+  if (!id && password.length < 8) { Toast.error('La contraseña debe tener mínimo 8 caracteres'); return; }
+  if (id && password && password.length < 8) { Toast.error('La nueva contraseña debe tener mínimo 8 caracteres'); return; }
+
+  const body = { full_name: fullName, email, role_id: parseInt(roleId) };
+  if (!id) { body.username = username; body.password = password; }
+  if (id && password) body.password = password;
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = id
+    ? await API.put('/usuarios/' + id, body)
+    : await API.post('/usuarios', body);
+
+  document.getElementById('f-username').disabled = false;
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar';
+
+  if (!res?.success) { Toast.error(res?.message || 'Error al guardar'); return; }
+  Toast.success(id ? 'Usuario actualizado' : 'Usuario creado');
+  Modal.close('modal-usuario');
+  loadUsuarios();
+});
+
+/* ── TOGGLE ACTIVO ── */
+async function toggleActivo(id, activar) {
+  const res = await API.patch(`/usuarios/${id}/${activar ? 'activar' : 'desactivar'}`);
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success(activar ? 'Usuario activado' : 'Usuario desactivado');
+  loadUsuarios();
+}
+
+loadUsuarios();
+</script>
+</body>
+</html>

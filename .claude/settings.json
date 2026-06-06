@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('./src/app.js'\\)\")",
+      "Bash(cd /d d:/FACULTAD/INMO/backend)",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); console.log\\('PORT:', process.env.PORT\\)\")",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3000/health\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

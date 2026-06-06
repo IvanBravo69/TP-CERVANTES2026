@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Clientes</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group" style="flex:1;min-width:200px">
+        <label>Buscar</label>
+        <div style="position:relative">
+          <i class="bi bi-search" style="position:absolute;left:.625rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem"></i>
+          <input id="f-search" class="filter-input" placeholder="Nombre, DNI, email..." style="padding-left:2rem;width:100%">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="f-tipo" class="filter-input">
+          <option value="">Todos</option>
+          <option value="Persona">Persona</option>
+          <option value="Empresa">Empresa</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-activo" class="filter-input">
+          <option value="">Todos</option>
+          <option value="true">Activos</option>
+          <option value="false">Inactivos</option>
+        </select>
+      </div>
+      <div class="filter-group" style="justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-outline btn-sm" id="btn-clear-filters"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <div class="filter-group" style="justify-content:flex-end;margin-left:auto">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-plus-lg"></i> Cliente</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre / Razón Social</th>
+              <th>Tipo</th>
+              <th>DNI / CUIT</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th>Alta</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CREAR / EDITAR -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5 id="modal-title">Cliente</h5>
+      <button class="btn-close" onclick="Modal.close('modal-cliente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-cliente" autocomplete="off">
+        <input type="hidden" id="f-id">
+
+        <!-- DNI primero -->
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">DNI / CUIT</label>
+            <input id="f-dni" type="text" class="form-control" placeholder="20-12345678-9">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipo <span style="color:#ef4444">*</span></label>
+            <select id="f-tipo-form" class="form-select">
+              <option value="Persona">Persona</option>
+              <option value="Empresa">Empresa</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Razón Social (visible solo para Empresa) -->
+        <div class="form-group" style="margin-bottom:1rem" id="grupo-razon-social">
+          <label class="form-label">Razón Social</label>
+          <input id="f-razon-social" type="text" class="form-control" placeholder="Nombre de la empresa">
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Nombre <span style="color:#ef4444">*</span></label>
+            <input id="f-nombre" type="text" class="form-control" placeholder="Nombre" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Apellido</label>
+            <input id="f-apellido" type="text" class="form-control" placeholder="Apellido">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Descripción</label>
+            <select id="f-descripcion" class="form-select">
+              <option value="">— Sin especificar —</option>
+              <option>Inquilino</option>
+              <option>Propietario</option>
+              <option>Comprador</option>
+              <option>Vendedor</option>
+              <option>Inversor</option>
+              <option>Garante</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">País</label>
+            <input id="f-pais" type="text" class="form-control" placeholder="Argentina">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Provincia</label>
+            <input id="f-provincia" type="text" class="form-control" placeholder="Córdoba">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Dirección</label>
+            <input id="f-direccion" type="text" class="form-control" placeholder="Av. Colón 1234">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Presupuesto</label>
+            <input id="f-presupuesto" type="number" class="form-control" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select id="f-moneda" class="form-select">
+              <option value="ARS">ARS — Peso argentino</option>
+              <option value="USD">USD — Dólar</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:0">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Email</label>
+            <input id="f-email" type="email" class="form-control" placeholder="correo@ejemplo.com">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Teléfono</label>
+            <input id="f-telefono" type="text" class="form-control" placeholder="351-555-0101">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER DETALLE -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h5>Detalle del cliente</h5>
+      <button class="btn-close" onclick="Modal.close('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalle-body">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Clientes');
+Modal.closeOnOverlay('modal-cliente');
+Modal.closeOnOverlay('modal-detalle');
+
+let state = { page: 1, limit: 20, search: '', tipo: '', activo: '' };
+
+// Mostrar/ocultar razón social según tipo
+document.getElementById('f-tipo-form').addEventListener('change', function() {
+  document.getElementById('grupo-razon-social').style.display =
+    this.value === 'Empresa' ? '' : 'none';
+});
+document.getElementById('grupo-razon-social').style.display = 'none';
+
+async function loadClientes() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.search) qs.set('search', state.search);
+  if (state.tipo)   qs.set('tipo', state.tipo);
+  if (state.activo) qs.set('activo', state.activo);
+
+  const res = await API.get('/clientes?' + qs.toString());
+  if (!res?.success) { Toast.error('Error al cargar clientes'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="bi bi-people"></i>Sin clientes registrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td class="text-muted">${c.id}</td>
+      <td>
+        <div class="fw-600">${c.razon_social || (c.nombre + (c.apellido ? ' ' + c.apellido : ''))}</div>
+        ${c.descripcion ? `<div class="text-muted" style="font-size:.75rem">${c.descripcion}</div>` : ''}
+      </td>
+      <td><span class="badge badge-${c.tipo.toLowerCase()}">${c.tipo}</span></td>
+      <td class="text-muted">${c.dni_cuit || '—'}</td>
+      <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email || '—'}</td>
+      <td class="text-muted">${c.telefono || '—'}</td>
+      <td><span class="badge badge-${c.activo ? 'activo' : 'inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td class="text-muted">${fmtDate(c.created_at)}</td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Ver detalle" onclick="verDetalle(${c.id})"><i class="bi bi-eye"></i></button>
+          <button class="btn btn-outline btn-icon btn-sm" title="Editar" onclick="editarCliente(${c.id})"><i class="bi bi-pencil"></i></button>
+          ${c.activo
+            ? `<button class="btn btn-outline btn-icon btn-sm" title="Desactivar" style="color:#ef4444" onclick="toggleActivo(${c.id},false)"><i class="bi bi-person-slash"></i></button>`
+            : `<button class="btn btn-outline btn-icon btn-sm" title="Activar" style="color:#22c55e" onclick="toggleActivo(${c.id},true)"><i class="bi bi-person-check"></i></button>`
+          }
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadClientes(); });
+}
+
+// FILTROS
+let searchTimer;
+document.getElementById('f-search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = e.target.value.trim(); state.page = 1; loadClientes(); }, 350);
+});
+document.getElementById('f-tipo').addEventListener('change', e => { state.tipo = e.target.value; state.page = 1; loadClientes(); });
+document.getElementById('f-activo').addEventListener('change', e => { state.activo = e.target.value; state.page = 1; loadClientes(); });
+document.getElementById('btn-clear-filters').addEventListener('click', () => {
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-tipo').value = '';
+  document.getElementById('f-activo').value = '';
+  state = { ...state, search: '', tipo: '', activo: '', page: 1 };
+  loadClientes();
+});
+
+// NUEVO
+document.getElementById('btn-nuevo').addEventListener('click', () => {
+  document.getElementById('modal-title').textContent = 'Nuevo cliente';
+  document.getElementById('form-cliente').reset();
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-pais').value = 'Argentina';
+  document.getElementById('grupo-razon-social').style.display = 'none';
+  Modal.open('modal-cliente');
+});
+
+// VER DETALLE
+async function verDetalle(id) {
+  Modal.open('modal-detalle');
+  document.getElementById('detalle-body').innerHTML = '<div class="spinner"></div>';
+  const res = await API.get('/clientes/' + id);
+  if (!res?.success) { document.getElementById('detalle-body').innerHTML = '<p style="color:#ef4444">Error al cargar</p>'; return; }
+  const c = res.data;
+  const badgeEstado = `<span class="badge badge-${c.activo ? 'activo' : 'inactivo'}">${c.activo ? 'Activo' : 'Inactivo'}</span>`;
+  const propRows = (c.propiedades || []).map(p => `
+    <tr>
+      <td>${p.id}</td>
+      <td>${p.titulo}</td>
+      <td>${p.tipo}</td>
+      <td><span class="badge badge-${p.operacion === 'Venta' ? 'venta' : 'alquiler'}">${p.operacion}</span></td>
+      <td><span class="badge badge-${p.estado.toLowerCase()}">${p.estado}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:1rem">Sin propiedades vinculadas</td></tr>';
+
+  document.getElementById('detalle-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.5rem;margin-bottom:1.25rem">
+      ${field('DNI / CUIT', c.dni_cuit || '—')}
+      ${field('Tipo', `<span class="badge badge-${c.tipo.toLowerCase()}">${c.tipo}</span>`)}
+      ${c.razon_social ? field('Razón Social', c.razon_social) : ''}
+      ${field('Nombre', `${c.nombre} ${c.apellido || ''}`)}
+      ${c.descripcion ? field('Descripción', c.descripcion) : ''}
+      ${field('Estado', badgeEstado)}
+      ${field('Email', c.email || '—')}
+      ${field('Teléfono', c.telefono || '—')}
+      ${c.presupuesto ? field('Presupuesto', `${c.moneda || 'ARS'} ${fmt(c.presupuesto)}`) : ''}
+      ${field('País', c.pais || '—')}
+      ${c.provincia ? field('Provincia', c.provincia) : ''}
+      ${field('Dirección', c.direccion || '—', 'grid-column:1/-1')}
+      ${field('Alta', fmtDate(c.created_at))}
+    </div>
+    <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:.625rem">Propiedades vinculadas</div>
+    <div class="table-wrapper" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+      <table>
+        <thead><tr><th>#</th><th>Título</th><th>Tipo</th><th>Operación</th><th>Estado</th></tr></thead>
+        <tbody>${propRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+function field(label, value, extra = '') {
+  return `<div style="${extra}"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:.2rem">${label}</div><div style="font-size:.875rem">${value}</div></div>`;
+}
+
+// EDITAR
+async function editarCliente(id) {
+  const res = await API.get('/clientes/' + id);
+  if (!res?.success) { Toast.error('No se pudo cargar el cliente'); return; }
+  const c = res.data;
+  document.getElementById('modal-title').textContent = 'Editar cliente';
+  document.getElementById('f-id').value           = c.id;
+  document.getElementById('f-dni').value           = c.dni_cuit || '';
+  document.getElementById('f-tipo-form').value     = c.tipo;
+  document.getElementById('f-nombre').value        = c.nombre;
+  document.getElementById('f-apellido').value      = c.apellido || '';
+  document.getElementById('f-razon-social').value  = c.razon_social || '';
+  document.getElementById('f-descripcion').value   = c.descripcion || '';
+  document.getElementById('f-pais').value          = c.pais || 'Argentina';
+  document.getElementById('f-provincia').value     = c.provincia || '';
+  document.getElementById('f-direccion').value     = c.direccion || '';
+  document.getElementById('f-presupuesto').value   = c.presupuesto || '';
+  document.getElementById('f-moneda').value        = c.moneda || 'ARS';
+  document.getElementById('f-email').value         = c.email || '';
+  document.getElementById('f-telefono').value      = c.telefono || '';
+  document.getElementById('grupo-razon-social').style.display = c.tipo === 'Empresa' ? '' : 'none';
+  Modal.open('modal-cliente');
+}
+
+// GUARDAR
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const id     = document.getElementById('f-id').value;
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!nombre) { Toast.error('El nombre es requerido'); return; }
+
+  const presupuesto = document.getElementById('f-presupuesto').value;
+
+  const body = {
+    tipo:        document.getElementById('f-tipo-form').value,
+    nombre,
+    apellido:    document.getElementById('f-apellido').value.trim()    || undefined,
+    razon_social: document.getElementById('f-razon-social').value.trim() || undefined,
+    descripcion: document.getElementById('f-descripcion').value        || undefined,
+    dni_cuit:    document.getElementById('f-dni').value.trim()         || undefined,
+    email:       document.getElementById('f-email').value.trim()       || undefined,
+    telefono:    document.getElementById('f-telefono').value.trim()    || undefined,
+    direccion:   document.getElementById('f-direccion').value.trim()   || undefined,
+    pais:        document.getElementById('f-pais').value.trim()        || undefined,
+    provincia:   document.getElementById('f-provincia').value.trim()   || undefined,
+    presupuesto: presupuesto ? parseFloat(presupuesto) : undefined,
+    moneda:      document.getElementById('f-moneda').value,
+  };
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = id
+    ? await API.put('/clientes/' + id, body)
+    : await API.post('/clientes', body);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar';
+
+  if (!res?.success) { Toast.error(res?.message || 'Error al guardar'); return; }
+
+  Toast.success(id ? 'Cliente actualizado' : 'Cliente creado');
+  Modal.close('modal-cliente');
+  loadClientes();
+});
+
+// TOGGLE ACTIVO
+async function toggleActivo(id, activar) {
+  const accion = activar ? 'activar' : 'desactivar';
+  const res = await API.patch(`/clientes/${id}/${accion}`);
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success(activar ? 'Cliente activado' : 'Cliente desactivado');
+  loadClientes();
+}
+
+loadClientes();
+</script>
+</body>
+</html>

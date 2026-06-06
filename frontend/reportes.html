@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Reportes</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- RESUMEN EJECUTIVO -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem" id="resumen-grid">
+      <div class="stat-card"><div class="spinner"></div></div>
+    </div>
+
+    <!-- FILA 1: Ingresos y Contratos -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+      <div class="report-card">
+        <div class="report-card-header">
+          <h6><i class="bi bi-graph-up" style="color:#15803d;margin-right:.4rem"></i>Ingresos vs Egresos (ARS — últimos 12 meses)</h6>
+        </div>
+        <div class="report-card-body"><div class="chart-wrap"><canvas id="chart-ingresos"></canvas></div></div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <h6><i class="bi bi-file-earmark-text" style="color:#1d4ed8;margin-right:.4rem"></i>Contratos por mes (últimos 12 meses)</h6>
+        </div>
+        <div class="report-card-body"><div class="chart-wrap"><canvas id="chart-contratos"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- FILA 2: Propiedades y Top Clientes -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="report-card">
+        <div class="report-card-header">
+          <h6><i class="bi bi-building" style="color:#7c3aed;margin-right:.4rem"></i>Propiedades por tipo</h6>
+        </div>
+        <div class="report-card-body"><div class="chart-wrap"><canvas id="chart-propiedades"></canvas></div></div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <h6><i class="bi bi-people" style="color:#0369a1;margin-right:.4rem"></i>Top 10 clientes por contratos</h6>
+        </div>
+        <div class="report-card-body">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>#</th><th>Cliente</th><th>Tipo</th><th>Contratos</th><th>Monto total</th></tr></thead>
+              <tbody id="top-clientes-body"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Reportes');
+
+const COLORS = {
+  green:  ['#16a34a','#22c55e','#4ade80'],
+  red:    ['#dc2626','#ef4444','#f87171'],
+  blue:   ['#1d4ed8','#3b82f6','#93c5fd'],
+  purple: ['#7c3aed','#8b5cf6','#a78bfa'],
+  multi:  ['#6366f1','#22c55e','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#14b8a6','#f97316'],
+};
+
+/* ── RESUMEN EJECUTIVO ── */
+async function loadResumen() {
+  const res = await API.get('/reportes/resumen');
+  if (!res?.success) return;
+  const s = res.data;
+  const items = [
+    { label:'Clientes activos',      value: fmt(s.clientes_activos),    icon:'bi-people-fill',          bg:'#ede9fe', color:'#7c3aed' },
+    { label:'Propiedades disponibles',value: fmt(s.propiedades_disponibles), icon:'bi-house-check-fill', bg:'#dcfce7', color:'#15803d' },
+    { label:'Contratos activos',     value: fmt(s.contratos_activos),   icon:'bi-file-earmark-check',   bg:'#dbeafe', color:'#1d4ed8' },
+    { label:'Alquileres activos',    value: fmt(s.alquileres_activos),  icon:'bi-house-door-fill',       bg:'#fef9c3', color:'#a16207' },
+    { label:'Ingresos mes (ARS)',    value: `$${fmt(s.ingresos_mes_ars)}`, icon:'bi-cash',              bg:'#dcfce7', color:'#15803d' },
+    { label:'Ingresos mes (USD)',    value: `U$S ${fmt(s.ingresos_mes_usd)}`, icon:'bi-currency-dollar',bg:'#dbeafe', color:'#1d4ed8' },
+  ];
+  document.getElementById('resumen-grid').innerHTML = items.map(i => `
+    <div class="stat-card">
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:${i.bg};color:${i.color}"><i class="bi ${i.icon}"></i></div>
+        <div><div class="stat-value" style="font-size:1.15rem">${i.value}</div><div class="stat-label">${i.label}</div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── INGRESOS VS EGRESOS ── */
+async function loadIngresosChart() {
+  const res = await API.get('/reportes/ingresos-mensuales');
+  if (!res?.success) return;
+
+  const arsData = res.data.filter(r => r.moneda === 'ARS');
+  const labels  = [...new Set(arsData.map(r => r.mes))].sort();
+
+  const ingresos = labels.map(m => {
+    const r = arsData.find(d => d.mes === m);
+    return r ? Number(r.ingresos) : 0;
+  });
+  const egresos = labels.map(m => {
+    const r = arsData.find(d => d.mes === m);
+    return r ? Number(r.egresos) : 0;
+  });
+
+  const fmtLabel = m => { const [y,mo] = m.split('-'); return `${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+mo-1]} ${y.slice(2)}`; };
+
+  new Chart(document.getElementById('chart-ingresos'), {
+    type: 'bar',
+    data: {
+      labels: labels.map(fmtLabel),
+      datasets: [
+        { label:'Ingresos', data: ingresos, backgroundColor: '#22c55e80', borderColor: '#16a34a', borderWidth:2, borderRadius:4 },
+        { label:'Egresos',  data: egresos,  backgroundColor: '#ef444480', borderColor: '#dc2626', borderWidth:2, borderRadius:4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'top' } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+fmt(v) } } },
+    },
+  });
+}
+
+/* ── CONTRATOS POR MES ── */
+async function loadContratosChart() {
+  const res = await API.get('/reportes/contratos-mensuales');
+  if (!res?.success) return;
+
+  const meses  = [...new Set(res.data.map(r => r.mes))].sort();
+  const ventas  = meses.map(m => { const r = res.data.find(d => d.mes===m && d.tipo==='Venta');    return r ? +r.cantidad : 0; });
+  const alquil  = meses.map(m => { const r = res.data.find(d => d.mes===m && d.tipo==='Alquiler'); return r ? +r.cantidad : 0; });
+
+  const fmtLabel = m => { const [y,mo] = m.split('-'); return `${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+mo-1]} ${y.slice(2)}`; };
+
+  new Chart(document.getElementById('chart-contratos'), {
+    type: 'line',
+    data: {
+      labels: meses.map(fmtLabel),
+      datasets: [
+        { label:'Ventas',    data: ventas, borderColor:'#7c3aed', backgroundColor:'#7c3aed20', fill:true, tension:.4, pointRadius:4 },
+        { label:'Alquileres',data: alquil, borderColor:'#1d4ed8', backgroundColor:'#1d4ed820', fill:true, tension:.4, pointRadius:4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'top' } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    },
+  });
+}
+
+/* ── PROPIEDADES POR TIPO ── */
+async function loadPropiedadesChart() {
+  const res = await API.get('/reportes/propiedades-por-tipo');
+  if (!res?.success) return;
+
+  // Agrupar por tipo (suma de todos los estados)
+  const porTipo = {};
+  res.data.forEach(r => { porTipo[r.tipo] = (porTipo[r.tipo] || 0) + +r.cantidad; });
+
+  new Chart(document.getElementById('chart-propiedades'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(porTipo),
+      datasets: [{
+        data: Object.values(porTipo),
+        backgroundColor: COLORS.multi,
+        borderWidth: 2, borderColor: '#fff',
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} propiedades` } },
+      },
+    },
+  });
+}
+
+/* ── TOP CLIENTES ── */
+async function loadTopClientes() {
+  const res = await API.get('/reportes/top-clientes');
+  const tbody = document.getElementById('top-clientes-body');
+  if (!res?.success) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:1.5rem">Sin datos</td></tr>'; return; }
+
+  if (!res.data.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:1.5rem"><i class="bi bi-people"></i>Sin contratos registrados</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = res.data.map((c, i) => `
+    <tr>
+      <td><span style="font-weight:700;color:${i<3?'#f59e0b':'#94a3b8'}">${i+1}</span></td>
+      <td class="fw-600">${c.nombre} ${c.apellido || ''}</td>
+      <td><span class="badge badge-${c.tipo.toLowerCase()}">${c.tipo}</span></td>
+      <td style="text-align:center"><span class="badge" style="background:#ede9fe;color:#7c3aed">${c.contratos}</span></td>
+      <td class="fw-600">${c.moneda} ${fmt(c.monto_total)}</td>
+    </tr>
+  `).join('');
+}
+
+/* ── CARGAR TODO ── */
+Promise.all([loadResumen(), loadIngresosChart(), loadContratosChart(), loadPropiedadesChart(), loadTopClientes()]);
+</script>
+</body>
+</html>

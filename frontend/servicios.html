@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servicios — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Servicios</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="f-tipo" class="filter-input">
+          <option value="">Todos</option>
+          <option>ABL</option><option>Luz</option><option>Gas</option>
+          <option>Agua</option><option>Expensas</option><option>Municipal</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="f-estado" class="filter-input">
+          <option value="">Todos</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pagado">Pagado</option>
+          <option value="Vencido">Vencido</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Vence desde</label>
+        <input id="f-desde" type="date" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Vence hasta</label>
+        <input id="f-hasta" type="date" class="filter-input">
+      </div>
+      <div class="filter-group" style="justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-outline btn-sm" id="btn-clear"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <div class="filter-group" style="margin-left:auto;justify-content:flex-end">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-plus-lg"></i> Servicio</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Propiedad</th>
+              <th>Descripción</th>
+              <th>Proveedor</th>
+              <th>Período</th>
+              <th>Monto</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CREAR / EDITAR -->
+<div class="modal-overlay" id="modal-servicio">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5 id="modal-title">Servicio</h5>
+      <button class="btn-close" onclick="Modal.close('modal-servicio')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-servicio" autocomplete="off">
+        <input type="hidden" id="f-id">
+
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Propiedad <span style="color:#ef4444">*</span></label>
+          <select id="f-propiedad" class="form-select" required>
+            <option value="">— Cargando propiedades… —</option>
+          </select>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Descripción <span style="color:#ef4444">*</span></label>
+            <select id="f-tipo-form" class="form-select" required>
+              <option value="">— Seleccionar —</option>
+              <option>ABL</option><option>Luz</option><option>Gas</option>
+              <option>Agua</option><option>Expensas</option><option>Municipal</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Proveedor</label>
+            <input id="f-proveedor" type="text" class="form-control" placeholder="Ej: EPEC, Aguas Córdoba">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Monto</label>
+            <input id="f-monto" type="number" class="form-control" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select id="f-moneda" class="form-select">
+              <option value="ARS">ARS — Peso</option>
+              <option value="USD">USD — Dólar</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Período</label>
+            <input id="f-periodo" type="text" class="form-control" placeholder="2025-01 (YYYY-MM)">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Fecha vencimiento</label>
+            <input id="f-vencimiento" type="date" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Observaciones</label>
+          <textarea id="f-obs" class="form-control" rows="2" placeholder="Notas adicionales..." style="resize:vertical"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-servicio')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MARCAR PAGADO -->
+<div class="modal-overlay" id="modal-pagar">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h5>Marcar como pagado</h5>
+      <button class="btn-close" onclick="Modal.close('modal-pagar')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.875rem;color:#475569;margin-bottom:1rem" id="pagar-desc"></p>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Fecha de pago</label>
+        <input id="f-fecha-pago" type="date" class="form-control">
+      </div>
+      <input type="hidden" id="pagar-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-pagar')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-pago"><i class="bi bi-check-lg"></i> Confirmar pago</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Servicios');
+Modal.closeOnOverlay('modal-servicio');
+Modal.closeOnOverlay('modal-pagar');
+
+let state = { page: 1, limit: 20, tipo: '', estado: '', desde: '', hasta: '' };
+
+const ESTADO_BADGE = { Pendiente: 'badge-reservada', Pagado: 'badge-activo', Vencido: 'badge-inactivo' };
+
+async function cargarPropiedades() {
+  const res = await API.get('/propiedades?limit=200');
+  if (!res?.success) return;
+  document.getElementById('f-propiedad').innerHTML =
+    '<option value="">— Seleccionar propiedad —</option>' +
+    res.data.rows.map(p => `<option value="${p.id}">${p.titulo} — ${p.ciudad}</option>`).join('');
+}
+
+async function loadServicios() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit });
+  if (state.tipo)   qs.set('tipo',   state.tipo);
+  if (state.estado) qs.set('estado', state.estado);
+  if (state.desde)  qs.set('desde',  state.desde);
+  if (state.hasta)  qs.set('hasta',  state.hasta);
+
+  const res = await API.get('/servicios?' + qs);
+  if (!res?.success) { Toast.error('Error al cargar servicios'); return; }
+
+  const { rows, total, page, limit } = res.data;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="bi bi-tools"></i>Sin servicios registrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(s => `
+    <tr>
+      <td class="text-muted">${s.id}</td>
+      <td style="max-width:180px">
+        <div class="fw-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.propiedad_titulo}">${s.propiedad_titulo}</div>
+        <div class="text-muted" style="font-size:.75rem">${s.propiedad_direccion}</div>
+      </td>
+      <td>${s.tipo}</td>
+      <td class="text-muted">${s.proveedor || '—'}</td>
+      <td class="text-muted">${s.periodo || '—'}</td>
+      <td class="fw-600">${s.monto != null ? s.moneda + ' ' + fmt(s.monto) : '—'}</td>
+      <td class="text-muted">${s.fecha_vencimiento ? fmtDate(s.fecha_vencimiento) : '—'}</td>
+      <td><span class="badge ${ESTADO_BADGE[s.estado] || ''}">${s.estado}</span></td>
+      <td>
+        <div class="table-actions" style="justify-content:center">
+          <button class="btn btn-outline btn-icon btn-sm" title="Editar" onclick="editarServicio(${s.id})"><i class="bi bi-pencil"></i></button>
+          ${s.estado !== 'Pagado' ? `<button class="btn btn-outline btn-icon btn-sm" title="Marcar pagado" style="color:#15803d" onclick="abrirPagar(${s.id},'${s.tipo} — ${s.propiedad_titulo.replace(/'/g,"\\'")}')"><i class="bi bi-check-circle"></i></button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (p) => { state.page = p; loadServicios(); });
+}
+
+// FILTROS
+document.getElementById('f-tipo').addEventListener('change',   e => { state.tipo   = e.target.value; state.page = 1; loadServicios(); });
+document.getElementById('f-estado').addEventListener('change', e => { state.estado = e.target.value; state.page = 1; loadServicios(); });
+document.getElementById('f-desde').addEventListener('change',  e => { state.desde  = e.target.value; state.page = 1; loadServicios(); });
+document.getElementById('f-hasta').addEventListener('change',  e => { state.hasta  = e.target.value; state.page = 1; loadServicios(); });
+document.getElementById('btn-clear').addEventListener('click', () => {
+  ['f-tipo','f-estado'].forEach(id => document.getElementById(id).value = '');
+  ['f-desde','f-hasta'].forEach(id => document.getElementById(id).value = '');
+  state = { ...state, tipo:'', estado:'', desde:'', hasta:'', page:1 };
+  loadServicios();
+});
+
+// NUEVO
+document.getElementById('btn-nuevo').addEventListener('click', async () => {
+  document.getElementById('modal-title').textContent = 'Nuevo servicio';
+  document.getElementById('form-servicio').reset();
+  document.getElementById('f-id').value = '';
+  await cargarPropiedades();
+  Modal.open('modal-servicio');
+});
+
+// EDITAR
+async function editarServicio(id) {
+  const res = await API.get('/servicios/' + id);
+  if (!res?.success) { Toast.error('No se pudo cargar el servicio'); return; }
+  const s = res.data;
+  document.getElementById('modal-title').textContent = 'Editar servicio';
+  document.getElementById('f-id').value          = s.id;
+  document.getElementById('f-tipo-form').value   = s.tipo;
+  document.getElementById('f-proveedor').value   = s.proveedor || '';
+  document.getElementById('f-monto').value       = s.monto || '';
+  document.getElementById('f-moneda').value      = s.moneda || 'ARS';
+  document.getElementById('f-periodo').value     = s.periodo || '';
+  document.getElementById('f-vencimiento').value = s.fecha_vencimiento?.split('T')[0] || '';
+  document.getElementById('f-obs').value         = s.observaciones || '';
+  await cargarPropiedades();
+  document.getElementById('f-propiedad').value   = s.propiedad_id;
+  Modal.open('modal-servicio');
+}
+
+// GUARDAR
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const id          = document.getElementById('f-id').value;
+  const propiedad_id = document.getElementById('f-propiedad').value;
+  const tipo        = document.getElementById('f-tipo-form').value;
+  if (!propiedad_id || !tipo) { Toast.error('Propiedad y descripción son requeridas'); return; }
+
+  const monto = document.getElementById('f-monto').value;
+  const body = {
+    tipo,
+    proveedor:         document.getElementById('f-proveedor').value.trim() || undefined,
+    monto:             monto ? parseFloat(monto) : undefined,
+    moneda:            document.getElementById('f-moneda').value,
+    periodo:           document.getElementById('f-periodo').value.trim() || undefined,
+    fecha_vencimiento: document.getElementById('f-vencimiento').value || undefined,
+    observaciones:     document.getElementById('f-obs').value.trim() || undefined,
+  };
+  if (!id) body.propiedad_id = parseInt(propiedad_id);
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = id
+    ? await API.put('/servicios/' + id, body)
+    : await API.post('/servicios', body);
+
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar';
+
+  if (!res?.success) { Toast.error(res?.message || 'Error al guardar'); return; }
+  Toast.success(id ? 'Servicio actualizado' : 'Servicio creado');
+  Modal.close('modal-servicio');
+  loadServicios();
+});
+
+// MARCAR PAGADO
+function abrirPagar(id, desc) {
+  document.getElementById('pagar-id').value  = id;
+  document.getElementById('pagar-desc').textContent = desc;
+  document.getElementById('f-fecha-pago').value = new Date().toISOString().split('T')[0];
+  Modal.open('modal-pagar');
+}
+document.getElementById('btn-confirmar-pago').addEventListener('click', async () => {
+  const id         = document.getElementById('pagar-id').value;
+  const fecha_pago = document.getElementById('f-fecha-pago').value;
+  const btn = document.getElementById('btn-confirmar-pago');
+  btn.disabled = true;
+  const res = await API.patch('/servicios/' + id + '/pagar', { fecha_pago });
+  btn.disabled = false;
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success('Servicio marcado como pagado');
+  Modal.close('modal-pagar');
+  loadServicios();
+});
+
+loadServicios();
+</script>
+</body>
+</html>

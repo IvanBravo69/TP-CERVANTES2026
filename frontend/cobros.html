@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobros — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Cobros</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- TOTALIZADORES -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem" id="totales-grid">
+      <div class="stat-card"><div class="spinner"></div></div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Moneda</label>
+        <select id="f-moneda" class="filter-input">
+          <option value="">Todas</option>
+          <option value="ARS">ARS</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Desde</label>
+        <input id="f-desde" type="date" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Hasta</label>
+        <input id="f-hasta" type="date" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-outline btn-sm" id="btn-clear"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <div class="filter-group" style="margin-left:auto">
+        <label style="opacity:0">x</label>
+        <button class="btn btn-primary" id="btn-nuevo"><i class="bi bi-plus-lg"></i> Registrar cobro</button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Concepto</th>
+              <th>Contrato</th>
+              <th>Cliente</th>
+              <th>Monto</th>
+              <th style="text-align:center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="pag-info"></span>
+        <div class="pagination-controls" id="pag-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL REGISTRAR COBRO -->
+<div class="modal-overlay" id="modal-cobro">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5>Registrar cobro</h5>
+      <button class="btn-close" onclick="Modal.close('modal-cobro')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-cobro" autocomplete="off">
+
+        <div class="form-group">
+          <label class="form-label">Contrato <span style="color:#ef4444">*</span></label>
+          <select id="f-contrato" class="form-select" required>
+            <option value="">— Seleccionar contrato activo —</option>
+          </select>
+        </div>
+
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Fecha <span style="color:#ef4444">*</span></label>
+            <input id="f-fecha" type="date" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Moneda</label>
+            <select id="f-moneda-form" class="form-select">
+              <option value="ARS">ARS — Peso</option>
+              <option value="USD">USD — Dólar</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Concepto <span style="color:#ef4444">*</span></label>
+          <input id="f-concepto" type="text" class="form-control" placeholder="Ej: Cuota Enero 2025, Seña" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label">Monto <span style="color:#ef4444">*</span></label>
+          <input id="f-monto" type="number" class="form-control" placeholder="150000" min="0.01" step="0.01" required>
+        </div>
+
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Observaciones</label>
+          <textarea id="f-obs" class="form-control" rows="2" placeholder="Notas adicionales..." style="resize:vertical"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-cobro')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar"><i class="bi bi-floppy"></i> Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-overlay" id="modal-eliminar">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h5>Eliminar cobro</h5>
+      <button class="btn-close" onclick="Modal.close('modal-eliminar')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.875rem;color:#475569">
+        ¿Confirmás que querés eliminar el cobro <strong id="eliminar-concepto"></strong>?<br>
+        Esta acción no se puede deshacer.
+      </p>
+      <input type="hidden" id="eliminar-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-eliminar')">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirmar-eliminar"><i class="bi bi-trash"></i> Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Cobros');
+Modal.closeOnOverlay('modal-cobro');
+Modal.closeOnOverlay('modal-eliminar');
+
+let state = { page: 1, limit: 20, moneda: '', desde: '', hasta: '' };
+
+function renderTotales(t) {
+  const items = [
+    { label:'Total cobrado ARS', value:`$ ${fmt(t.ing_ars)}`,   icon:'bi-arrow-down-circle-fill', bg:'#dcfce7', color:'#15803d' },
+    { label:'Total cobrado USD', value:`U$S ${fmt(t.ing_usd)}`, icon:'bi-arrow-down-circle-fill', bg:'#dbeafe', color:'#1d4ed8' },
+  ];
+  document.getElementById('totales-grid').innerHTML = items.map(i => `
+    <div class="stat-card">
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:${i.bg};color:${i.color}"><i class="bi ${i.icon}"></i></div>
+        <div><div class="stat-value" style="font-size:1.15rem">${i.value}</div><div class="stat-label">${i.label}</div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadCobros() {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+  const qs = new URLSearchParams({ page: state.page, limit: state.limit, tipo: 'Ingreso' });
+  if (state.moneda) qs.set('moneda', state.moneda);
+  if (state.desde)  qs.set('desde',  state.desde);
+  if (state.hasta)  qs.set('hasta',  state.hasta);
+
+  const res = await API.get('/finanzas?' + qs);
+  if (!res?.success) { Toast.error('Error al cargar cobros'); return; }
+
+  const { rows, total, page, limit, totales } = res.data;
+  renderTotales(totales);
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-arrow-down-circle"></i>Sin cobros registrados</div></td></tr>`;
+    renderPagination('pag-controls', 'pag-info', 0, 1, limit, () => {});
+    return;
+  }
+
+  tbody.innerHTML = rows.map(p => `
+    <tr>
+      <td class="text-muted">${p.id}</td>
+      <td>${fmtDate(p.fecha_pago)}</td>
+      <td class="fw-600">${p.concepto}</td>
+      <td class="text-muted" style="font-size:.8rem">#${p.contrato_id} · ${p.contrato_tipo}</td>
+      <td>${p.cliente_nombre} ${p.cliente_apellido || ''}</td>
+      <td class="fw-600" style="color:#15803d">+ ${p.moneda} ${fmt(p.monto)}</td>
+      <td style="text-align:center">
+        <button class="btn btn-outline btn-icon btn-sm" style="color:#ef4444" title="Eliminar"
+          onclick="pedirEliminar(${p.id},'${p.concepto.replace(/'/g,"\\'")}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination('pag-controls', 'pag-info', total, page, limit, (pg) => { state.page = pg; loadCobros(); });
+}
+
+document.getElementById('f-moneda').addEventListener('change', e => { state.moneda = e.target.value; state.page = 1; loadCobros(); });
+document.getElementById('f-desde').addEventListener('change',  e => { state.desde  = e.target.value; state.page = 1; loadCobros(); });
+document.getElementById('f-hasta').addEventListener('change',  e => { state.hasta  = e.target.value; state.page = 1; loadCobros(); });
+document.getElementById('btn-clear').addEventListener('click', () => {
+  document.getElementById('f-moneda').value = '';
+  ['f-desde','f-hasta'].forEach(id => document.getElementById(id).value = '');
+  state = { ...state, moneda:'', desde:'', hasta:'', page:1 };
+  loadCobros();
+});
+
+async function cargarContratos() {
+  const res = await API.get('/contratos?estado=Activo&limit=200');
+  if (!res?.success) return;
+  document.getElementById('f-contrato').innerHTML =
+    '<option value="">— Seleccionar contrato activo —</option>' +
+    res.data.rows.map(c =>
+      `<option value="${c.id}">#${c.id} · ${c.tipo || c.contrato_tipo} · ${c.propiedad_titulo} · ${c.cliente_nombre} ${c.cliente_apellido || ''}</option>`
+    ).join('');
+}
+
+document.getElementById('btn-nuevo').addEventListener('click', async () => {
+  document.getElementById('form-cobro').reset();
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  await cargarContratos();
+  Modal.open('modal-cobro');
+});
+
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const contrato_id = document.getElementById('f-contrato').value;
+  const concepto    = document.getElementById('f-concepto').value.trim();
+  const monto       = document.getElementById('f-monto').value;
+  const fecha_pago  = document.getElementById('f-fecha').value;
+  if (!contrato_id || !concepto || !monto || !fecha_pago) { Toast.error('Completá los campos requeridos'); return; }
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+
+  const res = await API.post('/finanzas', {
+    contrato_id: parseInt(contrato_id),
+    concepto,
+    tipo:         'Ingreso',
+    monto:        parseFloat(monto),
+    moneda:       document.getElementById('f-moneda-form').value,
+    fecha_pago,
+    observaciones: document.getElementById('f-obs').value.trim() || undefined,
+  });
+
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-floppy"></i> Registrar';
+  if (!res?.success) { Toast.error(res?.message || 'Error al registrar'); return; }
+  Toast.success('Cobro registrado');
+  Modal.close('modal-cobro');
+  loadCobros();
+});
+
+function pedirEliminar(id, concepto) {
+  document.getElementById('eliminar-id').value              = id;
+  document.getElementById('eliminar-concepto').textContent  = concepto;
+  Modal.open('modal-eliminar');
+}
+document.getElementById('btn-confirmar-eliminar').addEventListener('click', async () => {
+  const id  = document.getElementById('eliminar-id').value;
+  const btn = document.getElementById('btn-confirmar-eliminar');
+  btn.disabled = true;
+  const res = await API.delete('/finanzas/' + id);
+  btn.disabled = false;
+  if (!res?.success) { Toast.error(res?.message || 'Error'); return; }
+  Toast.success('Cobro eliminado');
+  Modal.close('modal-eliminar');
+  loadCobros();
+});
+
+loadCobros();
+</script>
+</body>
+</html>

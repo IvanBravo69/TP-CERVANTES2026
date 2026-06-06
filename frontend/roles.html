@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roles — Sistema Britos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar" id="app-sidebar"></div>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">Roles y Permisos</span>
+    <div class="topbar-user">
+      <div>
+        <div style="font-weight:600;font-size:.825rem;text-align:right" id="topbar-user-name"></div>
+        <div style="font-size:.72rem;color:#94a3b8;text-align:right" id="topbar-user-role"></div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar"></div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <div class="page-header">
+      <h1>Roles y Permisos</h1>
+      <p>Configuración de acceso por área del sistema</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem" id="roles-grid">
+      <div class="card" style="padding:2rem;display:flex;align-items:center;justify-content:center">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL PERMISOS -->
+<div class="modal-overlay" id="modal-rol">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5 id="modal-rol-title">Permisos del rol</h5>
+      <button class="btn-close" onclick="Modal.close('modal-rol')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-rol-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="Modal.close('modal-rol')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script>
+renderLayout('Roles');
+Modal.closeOnOverlay('modal-rol');
+
+const ROL_COLORS = {
+  'Admin':        { color: '#7c3aed', bg: '#f5f3ff', icon: 'bi-shield-fill-check' },
+  'Ventas':       { color: '#1d4ed8', bg: '#eff6ff', icon: 'bi-graph-up-arrow' },
+  'Alquileres':   { color: '#0369a1', bg: '#e0f2fe', icon: 'bi-house-door-fill' },
+  'Contabilidad': { color: '#a16207', bg: '#fefce8', icon: 'bi-cash-stack' },
+};
+
+const PERM_GROUPS = {
+  'Clientes':     p => p.startsWith('VER_CLIENTES') || p.startsWith('CREAR_CLIENTE') || p.startsWith('EDITAR_CLIENTE'),
+  'Propiedades':  p => p.includes('PROPIEDAD') || p.includes('PROPIEDADES'),
+  'Contratos':    p => p.includes('CONTRATO') || p.includes('CONTRATOS'),
+  'Finanzas':     p => p.includes('FINANZA') || p.includes('FINANZAS') || p.includes('PAGO'),
+  'Reportes':     p => p.includes('REPORTE') || p.includes('REPORTES'),
+  'Usuarios':     p => p.includes('USUARIO') || p.includes('USUARIOS'),
+  'Roles':        p => p.includes('ROL') || p.includes('ROLES'),
+};
+
+async function loadRoles() {
+  const res = await API.get('/roles');
+  if (!res?.success) { document.getElementById('roles-grid').innerHTML = '<p class="text-muted">Error al cargar roles.</p>'; return; }
+
+  document.getElementById('roles-grid').innerHTML = res.data.map(r => {
+    const cfg = ROL_COLORS[r.nombre] || { color: '#475569', bg: '#f8fafc', icon: 'bi-shield' };
+    return `
+      <div class="card" style="overflow:hidden">
+        <div style="padding:1.25rem 1.375rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.875rem">
+          <div style="width:40px;height:40px;border-radius:var(--r-sm);background:${cfg.bg};color:${cfg.color};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">
+            <i class="bi ${cfg.icon}"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:.9rem;color:var(--tx-1)">${r.nombre}</div>
+            <span class="badge badge-${r.activo ? 'activo' : 'inactivo'}" style="margin-top:.2rem">${r.activo ? 'Activo' : 'Inactivo'}</span>
+          </div>
+        </div>
+        <div style="padding:1rem 1.375rem;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:.775rem;color:var(--tx-4)">Ver permisos asignados</span>
+          <button class="btn btn-outline btn-sm" onclick="verRol(${r.id}, '${r.nombre}')">
+            <i class="bi bi-eye"></i> Ver
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function verRol(id, nombre) {
+  document.getElementById('modal-rol-title').textContent = `Permisos — ${nombre}`;
+  document.getElementById('modal-rol-body').innerHTML = '<div class="spinner"></div>';
+  Modal.open('modal-rol');
+
+  const res = await API.get('/roles/' + id);
+  if (!res?.success) {
+    document.getElementById('modal-rol-body').innerHTML = '<p class="text-muted">Error al cargar permisos.</p>';
+    return;
+  }
+
+  const permisos = res.data.permisos || [];
+  const cfg = ROL_COLORS[nombre] || { color: '#475569', bg: '#f8fafc', icon: 'bi-shield' };
+
+  if (!permisos.length) {
+    document.getElementById('modal-rol-body').innerHTML = '<p class="text-muted" style="font-size:.825rem">Este rol no tiene permisos asignados.</p>';
+    return;
+  }
+
+  // Agrupar permisos
+  const grupos = {};
+  permisos.forEach(p => {
+    let grupo = 'Otros';
+    for (const [g, fn] of Object.entries(PERM_GROUPS)) {
+      if (fn(p.nombre)) { grupo = g; break; }
+    }
+    if (!grupos[grupo]) grupos[grupo] = [];
+    grupos[grupo].push(p);
+  });
+
+  const html = Object.entries(grupos).map(([grp, items]) => `
+    <div style="margin-bottom:1rem">
+      <div class="section-title">${grp}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.35rem">
+        ${items.map(p => `<span class="badge" style="background:${cfg.bg};color:${cfg.color};font-size:.72rem">${p.nombre}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('modal-rol-body').innerHTML = `
+    <div style="margin-bottom:1rem;padding:.625rem .875rem;background:var(--bg);border-radius:var(--r-sm);font-size:.8rem;color:var(--tx-3)">
+      <i class="bi bi-info-circle me-1"></i> Total: <strong style="color:var(--tx-1)">${permisos.length}</strong> permisos asignados
+    </div>
+    ${html}
+  `;
+}
+
+loadRoles();
+</script>
+</body>
+</html>

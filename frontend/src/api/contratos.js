@@ -1,0 +1,10 @@
+import client from './client'
+export const getContratos    = (p) => client.get('/contratos', { params: p })
+export const getContrato     = (id) => client.get(`/contratos/${id}`)
+export const createContrato  = (d)  => client.post('/contratos', d)
+export const updateContrato  = (id, d) => client.put(`/contratos/${id}`, d)
+export const cambiarEstado   = (id, estado) => client.patch(`/contratos/${id}/estado`, { estado })
+export const renovarContrato = (id, d) => client.post(`/contratos/${id}/renovar`, d)
+export const getGarantes     = (id) => client.get(`/contratos/${id}/garantes`)
+export const addGarante      = (id, d) => client.post(`/contratos/${id}/garantes`, d)
+export const removeGarante   = (id, gid) => client.delete(`/contratos/${id}/garantes/${gid}`)
