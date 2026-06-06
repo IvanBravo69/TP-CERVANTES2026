@@ -1,4 +1,4 @@
-const { pool } = require('../../config/db');
+﻿const { pool } = require('../../config/db');
 
 const SELECT_BASE = `
   SELECT p.id, p.tipo, p.operacion, p.titulo, p.descripcion,
@@ -41,8 +41,8 @@ async function findAll({ page = 1, limit = 20, activo, tipo, operacion, estado, 
   );
 
   const [rows] = await pool.execute(
-    `${SELECT_BASE} ${where} ORDER BY p.id DESC LIMIT ? OFFSET ?`,
-    [...params, limit, offset]
+    `${SELECT_BASE} ${where} ORDER BY p.id DESC LIMIT ${limit} OFFSET ${offset}`,
+    params
   );
 
   return { total, page, limit, rows };
@@ -103,3 +103,4 @@ async function setActivo(id, activo) {
 }
 
 module.exports = { findAll, findById, create, update, setEstado, setActivo };
+

@@ -1,4 +1,4 @@
-const { pool } = require('../../config/db');
+﻿const { pool } = require('../../config/db');
 
 const SELECT_BASE = `
   SELECT id, nombre, apellido, dni_cuit, email, telefono, matricula, comision_pct, activo, created_at, updated_at
@@ -21,8 +21,8 @@ async function findAll({ page = 1, limit = 20, activo, search } = {}) {
 
   const [[{ total }]] = await pool.execute(`SELECT COUNT(*) AS total FROM agentes ${where}`, params);
   const [rows] = await pool.execute(
-    `${SELECT_BASE} ${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
-    [...params, limit, offset]
+    `${SELECT_BASE} ${where} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`,
+    params
   );
   return { total, page, limit, rows };
 }
@@ -65,3 +65,4 @@ async function setActivo(id, activo) {
 }
 
 module.exports = { findAll, findById, create, update, setActivo };
+
