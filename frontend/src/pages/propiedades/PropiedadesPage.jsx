@@ -56,8 +56,8 @@ export default function PropiedadesPage() {
     setHabitaciones(h)
     setModal({ open:true, data })
     const [rc, ra] = await Promise.all([
-      getClientes({ limit:200, activo:1 }),
-      getAgentes({ limit:200, activo:1 }),
+      getClientes({ limit:200, activo:'true' }),
+      getAgentes({ limit:200, activo:'true' }),
     ])
     if (rc?.success) setClientes(rc.data.rows)
     if (ra?.success) setAgentes(ra.data.rows)

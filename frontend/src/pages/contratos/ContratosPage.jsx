@@ -46,9 +46,9 @@ export default function ContratosPage() {
 
   async function openModal(data = { ...EMPTY_C }) {
     const [rp, rc, ra] = await Promise.all([
-      getPropiedades({ limit:200, activo:1, estado:'Disponible' }),
-      getClientes({ limit:200, activo:1 }),
-      getAgentes({ limit:200, activo:1 }),
+      getPropiedades({ limit:200, activo:'true', estado:'Disponible' }),
+      getClientes({ limit:200, activo:'true' }),
+      getAgentes({ limit:200, activo:'true' }),
     ])
     if (rp?.success) setPropList(rp.data.rows)
     if (rc?.success) setCliList(rc.data.rows)
