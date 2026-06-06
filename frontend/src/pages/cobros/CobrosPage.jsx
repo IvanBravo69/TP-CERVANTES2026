@@ -122,11 +122,11 @@ export default function CobrosPage() {
                   ? <tr><td colSpan={6}><EmptyState icon="bi-arrow-down-circle" message="No hay cobros" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
-                      <td>{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString('es-AR') : '�'}</td>
+                      <td>{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString('es-AR') : '—'}</td>
                       <td style={{ maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto}</td>
                       <td style={{ fontWeight:600, color:'#15803d' }}>+ {r.moneda} {fmt(r.monto)}</td>
-                      <td>{r.nro_comprobante || '�'}</td>
-                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '�'}</td>
+                      <td>{r.nro_comprobante || '—'}</td>
+                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '—'}</td>
                       <td><div className="table-actions">
                         <button className="btn btn-danger btn-sm btn-icon" title="Eliminar" onClick={() => setConfirm({ open:true, item:r })}>
                           <i className="bi bi-trash" /></button>
@@ -157,20 +157,20 @@ export default function CobrosPage() {
           </div>
         </div>
         <div className="form-group"><label className="form-label">Concepto *</label>
-          <input className="form-control" value={modal.data.concepto} onChange={setF('concepto')} placeholder="Ej: Cuota Enero 2025, Se�a" />
+          <input className="form-control" value={modal.data.concepto} onChange={setF('concepto')} placeholder="Ej: Cuota Enero 2025, Seña" />
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
             <input className="form-control" type="number" min="0" step="0.01" value={modal.data.monto} onChange={setF('monto')} />
           </div>
-          <div className="form-group"><label className="form-label">N� Comprobante</label>
+          <div className="form-group"><label className="form-label">Nº Comprobante</label>
             <input className="form-control" value={modal.data.nro_comprobante} onChange={setF('nro_comprobante')} />
           </div>
         </div>
         <div className="form-group"><label className="form-label">Contrato</label>
           <select className="form-select" value={modal.data.contrato_id} onChange={setF('contrato_id')}>
             <option value="">Sin contrato</option>
-            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} � {c.propiedad_titulo || c.id}</option>)}
+            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} — {c.propiedad_titulo || c.id}</option>)}
           </select>
         </div>
         <div className="form-group"><label className="form-label">Observaciones</label>
@@ -180,9 +180,8 @@ export default function CobrosPage() {
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleDelete}
         title="Eliminar cobro"
-        message={`�Eliminar el cobro "${confirm.item?.concepto}"? Esta acci�n no se puede deshacer.`}
+        message={`¿Eliminar el cobro "${confirm.item?.concepto}"? Esta acción no se puede deshacer.`}
       />
     </>
   )
 }
-

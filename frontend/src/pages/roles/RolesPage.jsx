@@ -77,14 +77,14 @@ export default function RolesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Rol</th><th>Descripci�n</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Rol</th><th>Descripción</th><th>Acciones</th></tr></thead>
               <tbody>
                 {roles.length === 0
                   ? <tr><td colSpan={3}><EmptyState icon="bi-shield" message="No hay roles" /></td></tr>
                   : roles.map(r => (
                     <tr key={r.id}>
                       <td><strong>{r.nombre}</strong></td>
-                      <td style={{ color:'var(--tx-3)' }}>{r.descripcion || '�'}</td>
+                      <td style={{ color:'var(--tx-3)' }}>{r.descripcion || '—'}</td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm" onClick={() => openPermisos(r)}>
                           <i className="bi bi-shield-check" /> Permisos
@@ -108,14 +108,14 @@ export default function RolesPage() {
           <input className="form-control" value={nuevoModal.nombre}
             onChange={e => setNuevoModal(n => ({ ...n, nombre: e.target.value }))} />
         </div>
-        <div className="form-group"><label className="form-label">Descripci�n</label>
+        <div className="form-group"><label className="form-label">Descripción</label>
           <input className="form-control" value={nuevoModal.descripcion}
             onChange={e => setNuevoModal(n => ({ ...n, descripcion: e.target.value }))} />
         </div>
       </Modal>
 
       <Modal open={permModal.open} onClose={() => setPermModal(p => ({ ...p, open:false }))}
-        title={`Permisos � ${permModal.rol?.nombre}`} size="lg"
+        title={`Permisos — ${permModal.rol?.nombre}`} size="lg"
         footer={<>
           <button className="btn btn-outline" onClick={() => setPermModal(p => ({ ...p, open:false }))}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleGuardarPermisos} disabled={permModal.saving}>
@@ -148,5 +148,3 @@ export default function RolesPage() {
     </>
   )
 }
-
-

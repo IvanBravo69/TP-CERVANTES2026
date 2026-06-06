@@ -16,4 +16,3 @@ export default function Modal({ open, onClose, title, size, footer, children }) 
     document.body
   )
 }
-

@@ -43,7 +43,7 @@ export default function HonorariosPage() {
   async function openConfig() {
     const res = await getConfig()
     if (res?.success) setConfigModal({ open:true, configs: res.data })
-    else toast.error('Error al cargar configuraci�n')
+    else toast.error('Error al cargar configuración')
   }
 
   async function handleSave() {
@@ -73,7 +73,7 @@ export default function HonorariosPage() {
     try {
       const res = await updateConfig(configModal.configs)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
-      toast.success('Configuraci�n actualizada')
+      toast.success('Configuración actualizada')
       setConfigModal(c => ({ ...c, open:false }))
     } catch(e) { toast.error(e?.message || 'Error') }
     finally    { setSaving(false) }
@@ -127,12 +127,12 @@ export default function HonorariosPage() {
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><span className="badge" style={{ background:'#fdf4ff', color:'#9333ea' }}>{r.tipo.replace(/_/g,' ')}</span></td>
-                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto || '�'}</td>
+                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto || '—'}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {fmt(r.monto)}</td>
                       <td><span className={`badge badge-${r.estado === 'Cobrado' ? 'activo' : 'inactivo'}`}>{r.estado}</span></td>
-                      <td>{r.fecha_generacion ? new Date(r.fecha_generacion).toLocaleDateString('es-AR') : '�'}</td>
-                      <td>{r.fecha_cobro ? new Date(r.fecha_cobro).toLocaleDateString('es-AR') : '�'}</td>
-                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '�'}</td>
+                      <td>{r.fecha_generacion ? new Date(r.fecha_generacion).toLocaleDateString('es-AR') : '—'}</td>
+                      <td>{r.fecha_cobro ? new Date(r.fecha_cobro).toLocaleDateString('es-AR') : '—'}</td>
+                      <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '—'}</td>
                       <td><div className="table-actions">
                         {r.estado !== 'Cobrado' && (
                           <button className="btn btn-success btn-sm btn-icon" title="Marcar cobrado"
@@ -181,7 +181,7 @@ export default function HonorariosPage() {
         <div className="form-group"><label className="form-label">Contrato</label>
           <select className="form-select" value={modal.data.contrato_id||''} onChange={setF('contrato_id')}>
             <option value="">Sin contrato</option>
-            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} � {c.propiedad_titulo || c.id}</option>)}
+            {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} — {c.propiedad_titulo || c.id}</option>)}
           </select>
         </div>
       </Modal>
@@ -192,7 +192,7 @@ export default function HonorariosPage() {
           <button className="btn btn-success" onClick={handleCobrar}>Confirmar cobro</button>
         </>}
       >
-        <p style={{ marginBottom:'1rem' }}>Honorario: <strong>{cobrarModal.item?.tipo?.replace(/_/g,' ')} � {cobrarModal.item?.moneda} {fmt(cobrarModal.item?.monto)}</strong></p>
+        <p style={{ marginBottom:'1rem' }}>Honorario: <strong>{cobrarModal.item?.tipo?.replace(/_/g,' ')} — {cobrarModal.item?.moneda} {fmt(cobrarModal.item?.monto)}</strong></p>
         <div className="form-group"><label className="form-label">Fecha de cobro</label>
           <input className="form-control" type="date" value={cobrarModal.fecha}
             onChange={e => setCobrarModal(p => ({ ...p, fecha: e.target.value }))} />
@@ -220,4 +220,3 @@ export default function HonorariosPage() {
     </>
   )
 }
-

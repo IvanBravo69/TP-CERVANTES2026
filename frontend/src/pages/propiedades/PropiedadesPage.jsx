@@ -75,14 +75,14 @@ export default function PropiedadesPage() {
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div><h1>Propiedades</h1><p>Cat�logo de inmuebles</p></div>
+        <div><h1>Propiedades</h1><p>Catálogo de inmuebles</p></div>
         <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-plus-lg" /> Propiedad</button>
       </div>
 
       <div className="filters-bar">
         {[
           { k:'tipo',     label:'Tipo',      opts:['','Casa','Departamento','Local','Terreno','Oficina','Otro'] },
-          { k:'operacion',label:'Operaci�n', opts:['','Venta','Alquiler','Venta y Alquiler'] },
+          { k:'operacion',label:'Operación', opts:['','Venta','Alquiler','Venta y Alquiler'] },
           { k:'estado',   label:'Estado',    opts:['','Disponible','Reservada','Vendida','Alquilada'] },
         ].map(({ k, label, opts }) => (
           <div key={k} className="filter-group">
@@ -102,7 +102,7 @@ export default function PropiedadesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>T�tulo</th><th>Tipo</th><th>Operaci�n</th><th>Ciudad</th><th>Precio</th><th>Estado</th><th>Agente</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Título</th><th>Tipo</th><th>Operación</th><th>Ciudad</th><th>Precio</th><th>Estado</th><th>Agente</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={8}><EmptyState icon="bi-building" message="No hay propiedades" /></td></tr>
@@ -114,7 +114,7 @@ export default function PropiedadesPage() {
                       <td>{r.ciudad}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.precio).toLocaleString('es-AR')}</td>
                       <td><span className={`badge ${BADG[r.estado] || ''}`}>{r.estado}</span></td>
-                      <td>{r.agente_nombre ? `${r.agente_nombre} ${r.agente_apellido||''}` : '�'}</td>
+                      <td>{r.agente_nombre ? `${r.agente_nombre} ${r.agente_apellido||''}` : '—'}</td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" onClick={() => openModal({ ...r })}><i className="bi bi-pencil" /></button>
                         <button className={`btn btn-sm btn-icon ${r.activo ? 'btn-warning' : 'btn-success'}`} onClick={() => setConfirm({ open:true, item:r })}>
@@ -141,15 +141,15 @@ export default function PropiedadesPage() {
               {['Casa','Departamento','Local','Terreno','Oficina','Otro'].map(o => <option key={o}>{o}</option>)}
             </select>
           </div>
-          <div className="form-group"><label className="form-label">Operaci�n *</label>
+          <div className="form-group"><label className="form-label">Operación *</label>
             <select className="form-select" value={modal.data.operacion||'Alquiler'} onChange={setF('operacion')}>
               {['Venta','Alquiler','Venta y Alquiler'].map(o => <option key={o}>{o}</option>)}
             </select>
           </div>
         </div>
-        <div className="form-group"><label className="form-label">T�tulo *</label><input className="form-control" value={modal.data.titulo||''} onChange={setF('titulo')} /></div>
-        <div className="form-group"><label className="form-label">Descripci�n</label><textarea className="form-control" rows={2} value={modal.data.descripcion||''} onChange={setF('descripcion')} /></div>
-        <div className="form-group"><label className="form-label">Direcci�n *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
+        <div className="form-group"><label className="form-label">Título *</label><input className="form-control" value={modal.data.titulo||''} onChange={setF('titulo')} /></div>
+        <div className="form-group"><label className="form-label">Descripción</label><textarea className="form-control" rows={2} value={modal.data.descripcion||''} onChange={setF('descripcion')} /></div>
+        <div className="form-group"><label className="form-label">Dirección *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
         <div className="form-row-3">
           <div className="form-group"><label className="form-label">Ciudad *</label><input className="form-control" value={modal.data.ciudad||''} onChange={setF('ciudad')} /></div>
           <div className="form-group"><label className="form-label">Provincia *</label><input className="form-control" value={modal.data.provincia||''} onChange={setF('provincia')} /></div>
@@ -159,7 +159,7 @@ export default function PropiedadesPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Precio *</label><input className="form-control" type="number" value={modal.data.precio||''} onChange={setF('precio')} /></div>
-          <div className="form-group"><label className="form-label">Superficie m�</label><input className="form-control" type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
+          <div className="form-group"><label className="form-label">Superficie m²</label><input className="form-control" type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Ambientes</label><input className="form-control" type="number" value={modal.data.ambientes||''} onChange={setF('ambientes')} /></div>
@@ -180,10 +180,8 @@ export default function PropiedadesPage() {
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar propiedad' : 'Activar propiedad'}
-        message={`�${confirm.item?.activo ? 'Desactivar' : 'Activar'} "${confirm.item?.titulo}"?`}
+        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} "${confirm.item?.titulo}"?`}
       />
     </>
   )
 }
-
-

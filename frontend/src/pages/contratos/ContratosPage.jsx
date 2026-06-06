@@ -71,13 +71,13 @@ export default function ContratosPage() {
   function handleGenerar() {
     const d = modal.data
     if (!d.tipo || !d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
-      toast.error('Complet� los campos requeridos'); return
+      toast.error('Completá los campos requeridos'); return
     }
     const prop   = propList.find(p => String(p.id) === String(d.propiedad_id)) || {}
     const cli    = cliList.find(c => String(c.id) === String(d.cliente_id)) || {}
     const agente = agList.find(a => String(a.id) === String(d.agente_id))
     const fmt    = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
-    const fmtD   = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '�'
+    const fmtD   = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '—'
     const hoy    = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' })
 
     const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
@@ -98,28 +98,28 @@ h1{text-align:center;font-size:18pt;text-transform:uppercase;letter-spacing:.1em
 @media print{body{padding:20px 40px}}
 </style></head><body>
 <h1>Contrato de ${d.tipo}</h1>
-<p class="sub">Generado el ${hoy} � Sistema Britos</p>
+<p class="sub">Generado el ${hoy} — Sistema Britos</p>
 
 <div class="sec-title">Propiedad</div>
 <div class="grid">
-  <div class="field"><label>T�tulo:</label><br>${prop.titulo || '�'}</div>
-  <div class="field"><label>Ciudad:</label><br>${prop.ciudad || '�'}</div>
-  <div class="field" style="grid-column:1/-1"><label>Direcci�n:</label><br>${prop.direccion || '�'}</div>
+  <div class="field"><label>Título:</label><br>${prop.titulo || '—'}</div>
+  <div class="field"><label>Ciudad:</label><br>${prop.ciudad || '—'}</div>
+  <div class="field" style="grid-column:1/-1"><label>Dirección:</label><br>${prop.direccion || '—'}</div>
 </div>
 
 <div class="sec-title">Cliente</div>
 <div class="grid">
   <div class="field"><label>Nombre:</label><br>${cli.nombre || ''} ${cli.apellido || ''}</div>
-  <div class="field"><label>DNI / CUIT:</label><br>${cli.dni_cuit || '�'}</div>
-  <div class="field"><label>Email:</label><br>${cli.email || '�'}</div>
-  <div class="field"><label>Tel�fono:</label><br>${cli.telefono || '�'}</div>
+  <div class="field"><label>DNI / CUIT:</label><br>${cli.dni_cuit || '—'}</div>
+  <div class="field"><label>Email:</label><br>${cli.email || '—'}</div>
+  <div class="field"><label>Teléfono:</label><br>${cli.telefono || '—'}</div>
 </div>
 
 ${agente ? `<div class="sec-title">Agente</div>
 <div class="grid"><div class="field"><label>Nombre:</label><br>${agente.apellido} ${agente.nombre}</div>
-<div class="field"><label>Matr�cula:</label><br>${agente.matricula || '�'}</div></div>` : ''}
+<div class="field"><label>Matrícula:</label><br>${agente.matricula || '—'}</div></div>` : ''}
 
-<div class="sec-title">Condiciones econ�micas</div>
+<div class="sec-title">Condiciones económicas</div>
 <div class="grid">
   <div class="field"><label>Tipo:</label><br>${d.tipo}</div>
   <div class="field"><label>Monto:</label><br>${d.moneda} ${fmt(d.monto)}</div>
@@ -133,7 +133,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
   <div class="firma"><div class="firma-line">Firma del cliente<br><small>${cli.nombre || ''} ${cli.apellido || ''}</small></div></div>
   <div class="firma"><div class="firma-line">Representante inmobiliario<br><small>Sistema Britos</small></div></div>
 </div>
-<div class="footer">Documento generado por Sistema Britos � Solo para uso interno</div>
+<div class="footer">Documento generado por Sistema Britos — Solo para uso interno</div>
 <script>window.onload=function(){window.print()}<\/script>
 </body></html>`
 
@@ -160,7 +160,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
       const d = { ...renModal.data, nuevo_monto: renModal.data.nuevo_monto ? Number(renModal.data.nuevo_monto) : undefined }
       const res = await renovarContrato(renModal.item.id, d)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
-      toast.success('Contrato renovado � nuevo contrato #' + res.data.id)
+      toast.success('Contrato renovado — nuevo contrato #' + res.data.id)
       setRenModal(m => ({ ...m, open:false })); load(page)
     } catch(e) { toast.error(e?.message || 'Error') }
     finally    { setSaving(false) }
@@ -230,8 +230,8 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
                       <td style={{ maxWidth:150, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.propiedad_titulo}</td>
                       <td>{r.cliente_nombre} {r.cliente_apellido||''}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR')}</td>
-                      <td>{r.fecha_inicio ? new Date(r.fecha_inicio).toLocaleDateString('es-AR') : '�'}</td>
-                      <td>{r.fecha_fin   ? new Date(r.fecha_fin).toLocaleDateString('es-AR')   : '�'}</td>
+                      <td>{r.fecha_inicio ? new Date(r.fecha_inicio).toLocaleDateString('es-AR') : '—'}</td>
+                      <td>{r.fecha_fin   ? new Date(r.fecha_fin).toLocaleDateString('es-AR')   : '—'}</td>
                       <td><span className={`badge ${BADG_E[r.estado]||''}`}>{r.estado}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, fecha_inicio: r.fecha_inicio?.slice(0,10), fecha_fin: r.fecha_fin?.slice(0,10) })}><i className="bi bi-pencil" /></button>
@@ -270,14 +270,14 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
         </div>
         <div className="form-group"><label className="form-label">Propiedad *</label>
           <select className="form-select" value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
-            <option value="">Seleccion� una propiedad</option>
-            {propList.map(p => <option key={p.id} value={p.id}>{p.titulo} � {p.ciudad}</option>)}
+            <option value="">Seleccioná una propiedad</option>
+            {propList.map(p => <option key={p.id} value={p.id}>{p.titulo} — {p.ciudad}</option>)}
           </select>
         </div>
         <div className="form-group"><label className="form-label">Cliente *</label>
           <select className="form-select" value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
-            <option value="">Seleccion� un cliente</option>
-            {cliList.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''} {c.dni_cuit ? `� ${c.dni_cuit}` : ''}</option>)}
+            <option value="">Seleccioná un cliente</option>
+            {cliList.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''} {c.dni_cuit ? `— ${c.dni_cuit}` : ''}</option>)}
           </select>
         </div>
         <div className="form-group"><label className="form-label">Agente</label>
@@ -319,7 +319,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
         <div className="alert alert-info mb-4"><i className="bi bi-info-circle" /> Se finaliza el contrato actual y se crea uno nuevo con las fechas indicadas.</div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Nueva fecha fin</label><input className="form-control" type="date" value={renModal.data.nueva_fecha_fin||''} onChange={e => setRenModal(m => ({ ...m, data: { ...m.data, nueva_fecha_fin: e.target.value } }))} /></div>
-          <div className="form-group"><label className="form-label">Nuevo monto</label><input className="form-control" type="number" placeholder="Dejar vac�o para mantener" value={renModal.data.nuevo_monto||''} onChange={e => setRenModal(m => ({ ...m, data: { ...m.data, nuevo_monto: e.target.value } }))} /></div>
+          <div className="form-group"><label className="form-label">Nuevo monto</label><input className="form-control" type="number" placeholder="Dejar vacío para mantener" value={renModal.data.nuevo_monto||''} onChange={e => setRenModal(m => ({ ...m, data: { ...m.data, nuevo_monto: e.target.value } }))} /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Moneda</label>
@@ -332,15 +332,15 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
       </Modal>
 
       {/* Garantes modal */}
-      <Modal open={garModal.open} onClose={() => setGarModal(m => ({ ...m, open:false }))} title={`Garantes � Contrato #${garModal.item?.id}`} size="lg">
+      <Modal open={garModal.open} onClose={() => setGarModal(m => ({ ...m, open:false }))} title={`Garantes — Contrato #${garModal.item?.id}`} size="lg">
         <div style={{ marginBottom:'1rem' }}>
           <div className="section-title">Garantes actuales</div>
           {garModal.list.length === 0
             ? <p style={{ color:'var(--tx-4)', fontSize:'.8rem' }}>Sin garantes registrados.</p>
-            : <table><thead><tr><th>Nombre</th><th>DNI</th><th>Tel�fono</th><th></th></tr></thead>
+            : <table><thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th></th></tr></thead>
               <tbody>{garModal.list.map(g => (
                 <tr key={g.id}>
-                  <td>{g.apellido} {g.nombre||''}</td><td>{g.dni_cuit||'�'}</td><td>{g.telefono||'�'}</td>
+                  <td>{g.apellido} {g.nombre||''}</td><td>{g.dni_cuit||'—'}</td><td>{g.telefono||'—'}</td>
                   <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => setConfirm({ open:true, garanteId:g.id })}><i className="bi bi-trash" /></button></td>
                 </tr>
               ))}</tbody></table>
@@ -354,14 +354,13 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={garModal.newG.dni_cuit||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, dni_cuit: e.target.value } }))} /></div>
-          <div className="form-group"><label className="form-label">Tel�fono</label><input className="form-control" value={garModal.newG.telefono||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, telefono: e.target.value } }))} /></div>
+          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={garModal.newG.telefono||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, telefono: e.target.value } }))} /></div>
         </div>
         <button className="btn btn-primary" onClick={handleAddGarante}><i className="bi bi-plus-lg" /> Agregar</button>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm({ open:false, garanteId:null })} onConfirm={handleRemoveGarante}
-        title="Quitar garante" message="�Eliminar este garante del contrato?" />
+        title="Quitar garante" message="¿Eliminar este garante del contrato?" />
     </>
   )
 }
-

@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getStats, getFinanzasPeriodo } from '../api/stats'
+import { getStats } from '../api/stats'
+import { getPagos } from '../api/finanzas'
 import Spinner from '../components/Spinner'
 
 const STAT_CFG = [
@@ -23,29 +24,28 @@ const ESTADO_CFG = {
 
 const BADGE = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
-function fmt(n) { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits:2, maximumFractionDigits:2 }) }
+function fmt(n)  { return Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits:2, maximumFractionDigits:2 }) }
 function fmtN(n) { return Number(n || 0).toLocaleString('es-AR') }
 
 function primerDiaMes() {
-  const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`
 }
-function hoy() {
-  const d = new Date(); return d.toISOString().split('T')[0]
-}
+function hoy() { return new Date().toISOString().split('T')[0] }
 
 export default function Dashboard() {
   const { user } = useAuth()
   const [stats,   setStats]   = useState(null)
   const [loading, setLoading] = useState(true)
-  const [desde,   setDesde]   = useState(primerDiaMes())
-  const [hasta,   setHasta]   = useState(hoy())
-  const [fin,     setFin]     = useState(null)
+  const [desde,   setDesde]   = useState(primerDiaMes)
+  const [hasta,   setHasta]   = useState(hoy)
+  const [totales, setTotales] = useState(null)
   const [loadFin, setLoadFin] = useState(false)
 
   const h = new Date().getHours()
-  const greeting = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting = h < 12 ? 'Buenos dias' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
   const name = user?.full_name?.split(' ')[0] || user?.username || 'usuario'
-  const days   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+  const days   = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado']
   const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
   const now = new Date()
   const dateStr = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`
@@ -58,8 +58,8 @@ export default function Dashboard() {
     if (!desde || !hasta) return
     setLoadFin(true)
     try {
-      const r = await getFinanzasPeriodo({ desde, hasta, limit: 1 })
-      if (r?.success) setFin(r.data.totales)
+      const r = await getPagos({ desde, hasta, limit: 1 })
+      if (r?.success) setTotales(r.data.totales)
     } finally { setLoadFin(false) }
   }, [desde, hasta])
 
@@ -67,13 +67,13 @@ export default function Dashboard() {
 
   const total = stats?.total_propiedades || 1
 
-  const finCards = fin ? [
-    { label:'Cobrado ARS', val:`$ ${fmt(fin.ing_ars)}`,     icon:'bi-arrow-down-circle-fill', color:'#15803d', bg:'#f0fdf4' },
-    { label:'Cobrado USD', val:`U$S ${fmt(fin.ing_usd)}`,   icon:'bi-arrow-down-circle-fill', color:'#1d4ed8', bg:'#eff6ff' },
-    { label:'Pagado ARS',  val:`$ ${fmt(fin.eg_ars)}`,      icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
-    { label:'Pagado USD',  val:`U$S ${fmt(fin.eg_usd)}`,    icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
-    { label:'Balance ARS', val:`$ ${fmt(fin.ing_ars - fin.eg_ars)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
-    { label:'Balance USD', val:`U$S ${fmt(fin.ing_usd - fin.eg_usd)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
+  const finCards = totales ? [
+    { label:'Cobrado ARS', val:`$ ${fmt(totales.ing_ars)}`,   icon:'bi-arrow-down-circle-fill', color:'#15803d', bg:'#f0fdf4' },
+    { label:'Cobrado USD', val:`U$S ${fmt(totales.ing_usd)}`, icon:'bi-arrow-down-circle-fill', color:'#1d4ed8', bg:'#eff6ff' },
+    { label:'Pagado ARS',  val:`$ ${fmt(totales.eg_ars)}`,    icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
+    { label:'Pagado USD',  val:`U$S ${fmt(totales.eg_usd)}`,  icon:'bi-arrow-up-circle-fill',   color:'#dc2626', bg:'#fef2f2' },
+    { label:'Balance ARS', val:`$ ${fmt(totales.ing_ars - totales.eg_ars)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
+    { label:'Balance USD', val:`U$S ${fmt(totales.ing_usd - totales.eg_usd)}`, icon:'bi-graph-up-arrow', color:'#7c3aed', bg:'#f5f3ff' },
   ] : []
 
   return (
@@ -88,7 +88,6 @@ export default function Dashboard() {
         <div style={{ textAlign:'center', padding:'3rem' }}><Spinner size={32} /></div>
       ) : (
         <>
-          {/* Estadísticas generales */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))', gap:'.875rem', marginBottom:'1.5rem' }}>
             {STAT_CFG.map(cfg => (
               <div key={cfg.key} className="stat-card">
@@ -105,12 +104,11 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Rango de fechas financiero */}
           <div className="card" style={{ marginBottom:'1rem', padding:'1rem 1.25rem' }}>
             <div style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
               <span style={{ fontWeight:600, fontSize:'.875rem' }}>
                 <i className="bi bi-calendar-range" style={{ marginRight:'.4rem' }} />
-                Resumen financiero del período
+                Resumen financiero del periodo
               </span>
               <div style={{ display:'flex', alignItems:'center', gap:'.5rem', marginLeft:'auto', flexWrap:'wrap' }}>
                 <label style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>Desde</label>
@@ -123,7 +121,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Tarjetas financieras del período */}
           {loadFin ? (
             <div style={{ textAlign:'center', padding:'1.5rem' }}><Spinner /></div>
           ) : (
@@ -144,7 +141,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Gráficos y tablas */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
             <div className="card">
               <div className="card-header">
@@ -169,12 +165,12 @@ export default function Dashboard() {
 
             <div className="card">
               <div className="card-header">
-                <h6><i className="bi bi-clock-history me-2" />Últimas propiedades</h6>
+                <h6><i className="bi bi-clock-history me-2" />Ultimas propiedades</h6>
                 <Link to="/propiedades" className="btn btn-outline btn-sm">Ver todas</Link>
               </div>
               <div className="table-wrapper">
                 <table>
-                  <thead><tr><th>Título</th><th>Tipo</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>Titulo</th><th>Tipo</th><th>Estado</th></tr></thead>
                   <tbody>
                     {(stats?.ultimas_propiedades || []).length === 0
                       ? <tr><td colSpan={3}><div className="empty-state"><i className="bi bi-building" />Sin propiedades</div></td></tr>

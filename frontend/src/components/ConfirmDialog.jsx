@@ -2,7 +2,7 @@ import Modal from './Modal'
 
 export default function ConfirmDialog({ open, onClose, onConfirm, title, message, loading }) {
   return (
-    <Modal open={open} onClose={onClose} title={title || 'Confirmar acci�n'}
+    <Modal open={open} onClose={onClose} title={title || 'Confirmar acción'}
       footer={
         <>
           <button className="btn btn-outline" onClick={onClose} disabled={loading}>Cancelar</button>
@@ -12,8 +12,7 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
         </>
       }
     >
-      <p style={{ fontSize: '.875rem', color: 'var(--tx-2)' }}>{message || '�Est�s seguro de realizar esta acci�n?'}</p>
+      <p style={{ fontSize: '.875rem', color: 'var(--tx-2)' }}>{message || '¿Estás seguro de realizar esta acción?'}</p>
     </Modal>
   )
 }
-

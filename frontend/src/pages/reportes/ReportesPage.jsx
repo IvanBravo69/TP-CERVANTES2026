@@ -26,7 +26,7 @@ export default function ReportesPage() {
   return (
     <>
       <div className="page-header">
-        <div><h1>Reportes</h1><p>Resumen estad�stico del negocio</p></div>
+        <div><h1>Reportes</h1><p>Resumen estadístico del negocio</p></div>
       </div>
 
       {resumen && (
@@ -103,4 +103,3 @@ export default function ReportesPage() {
     </>
   )
 }
-
