@@ -9,7 +9,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { tipo:'Casa', operacion:'Alquiler', titulo:'', descripcion:'', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
+const EMPTY = { tipo:'Casa', operacion:'Alquiler', titulo:'', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
 const BADG  = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
 // Dormitorios determinan el conteo de ambientes (arg: dorm+1, o monoambiente si dorm=0)
@@ -175,7 +175,6 @@ export default function PropiedadesPage() {
           </div>
         </div>
         <div className="form-group"><label className="form-label">Título *</label><input className="form-control" value={modal.data.titulo||''} onChange={setF('titulo')} /></div>
-        <div className="form-group"><label className="form-label">Descripción</label><textarea className="form-control" rows={2} value={modal.data.descripcion||''} onChange={setF('descripcion')} /></div>
         <div className="form-group"><label className="form-label">Dirección *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
         <div className="form-row-3">
           <div className="form-group"><label className="form-label">Ciudad *</label><input className="form-control" value={modal.data.ciudad||''} onChange={setF('ciudad')} /></div>
