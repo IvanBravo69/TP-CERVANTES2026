@@ -68,11 +68,20 @@ export default function ContratosPage() {
     finally    { setSaving(false) }
   }
 
-  function handleGenerar() {
+  async function handleGenerar() {
     const d = modal.data
     if (!d.tipo || !d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
       toast.error('Completá los campos requeridos'); return
     }
+    setSaving(true)
+    try {
+      const payload = { ...d, monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null }
+      const res = await createContrato(payload)
+      if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
+      toast.success('Contrato guardado')
+      load(page)
+    } catch(e) { toast.error(e?.message || 'Error al guardar'); return }
+    finally { setSaving(false) }
     const prop   = propList.find(p => String(p.id) === String(d.propiedad_id)) || {}
     const cli    = cliList.find(c => String(c.id) === String(d.cliente_id)) || {}
     const agente = agList.find(a => String(a.id) === String(d.agente_id))
@@ -256,7 +265,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           {modal.data.id
             ? <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
-            : <button className="btn btn-primary" onClick={handleGenerar}><i className="bi bi-printer" /> Generar contrato</button>
+            : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-printer" /> Generar contrato</>}</button>
           }
         </>}
       >

@@ -8,7 +8,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { contrato_id:'', tipo:'ABL', descripcion:'', monto:'', moneda:'ARS', fecha_vencimiento:'', periodo:'' }
+const EMPTY = { contrato_id:'', tipo:'ABL', monto:'', moneda:'ARS', fecha_vencimiento:'', periodo:'' }
 
 export default function ServiciosPage() {
   const [rows, setRows]       = useState([])
@@ -93,14 +93,13 @@ export default function ServiciosPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Tipo</th><th>Descripción</th><th>Período</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>Contrato</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Tipo</th><th>Período</th><th>Vencimiento</th><th>Monto</th><th>Estado</th><th>Contrato</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
-                  ? <tr><td colSpan={8}><EmptyState icon="bi-receipt" message="No hay servicios" /></td></tr>
+                  ? <tr><td colSpan={7}><EmptyState icon="bi-receipt" message="No hay servicios" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><span className="badge" style={{ background:'#e0f2fe', color:'#0369a1' }}>{r.tipo}</span></td>
-                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.descripcion || '—'}</td>
                       <td>{r.periodo || '—'}</td>
                       <td>{r.fecha_vencimiento ? new Date(r.fecha_vencimiento).toLocaleDateString('es-AR') : '—'}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR')}</td>
@@ -141,9 +140,6 @@ export default function ServiciosPage() {
               <option>ARS</option><option>USD</option>
             </select>
           </div>
-        </div>
-        <div className="form-group"><label className="form-label">Descripción</label>
-          <input className="form-control" value={modal.data.descripcion||''} onChange={setF('descripcion')} />
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
