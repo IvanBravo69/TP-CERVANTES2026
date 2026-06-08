@@ -33,6 +33,8 @@ export default function AgentesPage() {
   useEffect(() => { setPage(1); load(1) }, [filters])
 
   async function handleSave() {
+    if (!modal.data.nombre?.trim())   { toast.error('El nombre es obligatorio');   return }
+    if (!modal.data.apellido?.trim()) { toast.error('El apellido es obligatorio'); return }
     setSaving(true)
     try {
       const res = modal.data.id

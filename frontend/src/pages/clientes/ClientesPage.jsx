@@ -42,6 +42,8 @@ export default function ClientesPage() {
   function openEdit(r) { setModal({ open:true, data: { ...r, presupuesto: r.presupuesto ?? '' } }) }
 
   async function handleSave() {
+    if (!modal.data.nombre?.trim())   { toast.error('El nombre es obligatorio');   return }
+    if (!modal.data.apellido?.trim()) { toast.error('El apellido es obligatorio'); return }
     setSaving(true)
     try {
       const payload = {
@@ -50,7 +52,7 @@ export default function ClientesPage() {
         razon_social: modal.data.razon_social || undefined,
         descripcion:  modal.data.descripcion  || undefined,
         provincia:    modal.data.provincia     || undefined,
-        apellido:     modal.data.apellido      || undefined,
+        apellido:     modal.data.apellido,
       }
       const res = modal.data.id
         ? await updateCliente(modal.data.id, payload)
@@ -177,7 +179,7 @@ export default function ClientesPage() {
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Apellido</label>
+            <label className="form-label">Apellido *</label>
             <input className="form-control" value={modal.data.apellido || ''} onChange={setF('apellido')} />
           </div>
           <div className="form-group">
