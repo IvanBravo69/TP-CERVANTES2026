@@ -4,9 +4,11 @@ const SELECT_BASE = `
   SELECT s.id, s.tipo, s.proveedor, s.periodo, s.monto, s.moneda,
          s.fecha_vencimiento, s.fecha_pago, s.estado, s.observaciones,
          s.created_at, s.updated_at,
-         s.propiedad_id, p.titulo AS propiedad_titulo, p.direccion AS propiedad_direccion
+         s.propiedad_id, p.titulo AS propiedad_titulo, p.direccion AS propiedad_direccion,
+         c.id AS contrato_id
   FROM servicios s
   JOIN propiedades p ON p.id = s.propiedad_id
+  LEFT JOIN contratos c ON c.propiedad_id = s.propiedad_id AND c.estado = 'Activo'
 `;
 
 async function findAll({ page = 1, limit = 20, propiedad_id, tipo, estado, desde, hasta } = {}) {
