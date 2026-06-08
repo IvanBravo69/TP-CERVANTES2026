@@ -2,6 +2,9 @@ const model        = require('./contratos.model');
 const propModel    = require('../propiedades/propiedades.model');
 const clienteModel = require('../clientes/clientes.model');
 const honorariosSvc = require('../honorarios/honorarios.service');
+const serviciosModel = require('../servicios/servicios.model');
+
+const SERVICIOS_BASICOS = ['Luz', 'Gas', 'Agua', 'Expensas', 'Municipal'];
 
 const ESTADOS = ['Activo', 'Finalizado', 'Cancelado'];
 
@@ -44,6 +47,11 @@ async function crear(data) {
   // Auto-generar honorario de cierre según configuración
   const tipoHonorario = tipo === 'Venta' ? 'Cierre_Venta' : 'Cierre_Alquiler';
   await honorariosSvc.autoGenerar(contrato.id, tipoHonorario);
+
+  // Auto-crear servicios básicos para la propiedad
+  await Promise.all(
+    SERVICIOS_BASICOS.map(t => serviciosModel.create({ propiedad_id, tipo: t }))
+  );
 
   return contrato;
 }
