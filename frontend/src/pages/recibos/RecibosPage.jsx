@@ -7,14 +7,56 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { contrato_id:'', concepto:'', monto:'', moneda:'ARS', fecha_emision:'', observaciones:'' }
+const EMPTY = { contrato_id:'', concepto:'', monto:'', moneda:'ARS', fecha:'', observaciones:'' }
+
+function imprimirRecibo(r) {
+  const nro  = String(r.numero).padStart(6, '0')
+  const hoy  = new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' })
+  const monto = Number(r.monto).toLocaleString('es-AR', { minimumFractionDigits:2 })
+  const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Recibo #${nro}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;font-size:12pt;color:#1a1a1a;padding:40px 60px;line-height:1.7}
+h1{text-align:center;font-size:20pt;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.sub{text-align:center;color:#555;font-size:10pt;margin-bottom:32px}
+.nro{text-align:center;font-size:14pt;font-weight:bold;color:#1d4ed8;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;margin-bottom:16px}
+.field label{font-weight:bold;font-size:10pt;color:#555}
+.field span{display:block;font-size:12pt}
+.monto-box{border:2px solid #1d4ed8;border-radius:8px;padding:16px 24px;text-align:center;margin:24px 0}
+.monto-box .label{font-size:10pt;color:#555;margin-bottom:4px}
+.monto-box .valor{font-size:22pt;font-weight:bold;color:#1d4ed8}
+.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:60px}
+.firma{text-align:center}.firma-line{border-top:1px solid #333;padding-top:6px;font-size:10pt;margin-top:48px}
+.footer{text-align:center;font-size:9pt;color:#888;margin-top:32px;border-top:1px solid #ddd;padding-top:12px}
+@media print{body{padding:20px 40px}}</style></head><body>
+<h1>Sistema Britos</h1>
+<p class="sub">Inmobiliaria</p>
+<p class="nro">RECIBO N° ${nro}</p>
+<div class="grid">
+  <div class="field"><label>Fecha</label><span>${hoy}</span></div>
+  <div class="field"><label>Contrato</label><span>${r.contrato_id ? '#' + r.contrato_id : '—'}</span></div>
+  <div class="field"><label>Cliente</label><span>${r.cliente_apellido || ''} ${r.cliente_nombre || ''}</span></div>
+  <div class="field"><label>Propiedad</label><span>${r.propiedad_titulo || '—'}</span></div>
+</div>
+<div class="field" style="margin-bottom:16px"><label>Concepto</label><span>${r.concepto}</span></div>
+<div class="monto-box"><div class="label">Monto recibido</div><div class="valor">${r.moneda} ${monto}</div></div>
+${r.observaciones ? `<div class="field" style="margin-bottom:24px"><label>Observaciones</label><span>${r.observaciones}</span></div>` : ''}
+<div class="firmas">
+  <div class="firma"><div class="firma-line">Firma del cliente</div></div>
+  <div class="firma"><div class="firma-line">Responsable — Sistema Britos</div></div>
+</div>
+<div class="footer">Documento generado por Sistema Britos — Solo para uso interno</div>
+<script>window.onload=function(){window.print()}<\/script></body></html>`
+  const w = window.open('', '_blank', 'width=800,height=700')
+  w.document.write(doc)
+  w.document.close()
+}
 
 export default function RecibosPage() {
   const [rows, setRows]       = useState([])
   const [total, setTotal]     = useState(0)
   const [page, setPage]       = useState(1)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ moneda:'', desde:'', hasta:'' })
+  const [filters, setFilters] = useState({ contrato_id:'', moneda:'', desde:'', hasta:'' })
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [saving, setSaving]   = useState(false)
   const [contratos, setContratos] = useState([])
@@ -33,7 +75,7 @@ export default function RecibosPage() {
   useEffect(() => { setPage(1); load(1) }, [filters])
 
   async function openModal() {
-    setModal({ open:true, data:{ ...EMPTY, fecha_emision: new Date().toISOString().slice(0,10) } })
+    setModal({ open:true, data:{ ...EMPTY, fecha: new Date().toISOString().slice(0,10) } })
     const rc = await getContratos({ limit:200 })
     if (rc?.success) setContratos(rc.data.rows)
   }
@@ -62,6 +104,10 @@ export default function RecibosPage() {
 
       <div className="filters-bar">
         <div className="filter-group">
+          <label>Contrato #</label>
+          <input className="filter-input" style={{ width:110 }} type="number" placeholder="Nro..." value={filters.contrato_id} onChange={set('contrato_id')} />
+        </div>
+        <div className="filter-group">
           <label>Moneda</label>
           <select className="filter-input" value={filters.moneda} onChange={set('moneda')}>
             <option value="">Todas</option><option>ARS</option><option>USD</option>
@@ -81,18 +127,20 @@ export default function RecibosPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Nº Recibo</th><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Contrato</th><th>Observaciones</th></tr></thead>
+              <thead><tr><th>Nº Recibo</th><th>Fecha</th><th>Concepto</th><th>Monto</th><th>Contrato</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={6}><EmptyState icon="bi-receipt-cutoff" message="No hay recibos" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><strong style={{ color:'var(--primary)' }}>#{String(r.numero).padStart(6,'0')}</strong></td>
-                      <td>{r.fecha_emision ? new Date(r.fecha_emision).toLocaleDateString('es-AR') : '—'}</td>
+                      <td>{r.fecha ? new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR') : '—'}</td>
                       <td style={{ maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.concepto}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR', { minimumFractionDigits:2 })}</td>
                       <td style={{ fontSize:'.8rem' }}>{r.contrato_id ? `#${r.contrato_id}` : '—'}</td>
-                      <td style={{ fontSize:'.8rem', color:'var(--tx-3)' }}>{r.observaciones || '—'}</td>
+                      <td><div className="table-actions">
+                        <button className="btn btn-outline btn-sm btn-icon" title="Imprimir recibo" onClick={() => imprimirRecibo(r)}><i className="bi bi-printer" /></button>
+                      </div></td>
                     </tr>
                   ))}
               </tbody>
@@ -126,7 +174,7 @@ export default function RecibosPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Fecha de emisión *</label>
-            <input className="form-control" type="date" value={modal.data.fecha_emision} onChange={setF('fecha_emision')} />
+            <input className="form-control" type="date" value={modal.data.fecha} onChange={setF('fecha')} />
           </div>
           <div className="form-group"><label className="form-label">Contrato</label>
             <select className="form-select" value={modal.data.contrato_id} onChange={setF('contrato_id')}>

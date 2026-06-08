@@ -49,10 +49,14 @@ async function crear(data) {
   const tipoHonorario = tipo === 'Venta' ? 'Cierre_Venta' : 'Cierre_Alquiler';
   await honorariosSvc.autoGenerar(contrato.id, tipoHonorario);
 
-  // Auto-crear servicios básicos para la propiedad
-  await Promise.all(
-    SERVICIOS_BASICOS.map(t => serviciosModel.create({ propiedad_id, tipo: t }))
-  );
+  // Crear servicios seleccionados (o todos los básicos si no se especifica)
+  const serviciosACrear = Array.isArray(data.servicios) ? data.servicios : SERVICIOS_BASICOS;
+  if (serviciosACrear.length > 0) {
+    await Promise.all(
+      serviciosACrear.filter(t => SERVICIOS_BASICOS.includes(t))
+                     .map(t => serviciosModel.create({ propiedad_id, tipo: t }))
+    );
+  }
 
   return contrato;
 }

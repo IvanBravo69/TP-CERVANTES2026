@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getContratos, createContrato, updateContrato, cambiarEstado, renovarContrato, getGarantes, addGarante, removeGarante } from '../../api/contratos'
+import { getPagosByContrato } from '../../api/finanzas'
 import { getPropiedades } from '../../api/propiedades'
 import { getClientes }    from '../../api/clientes'
 import { getAgentes }     from '../../api/agentes'
@@ -27,6 +28,9 @@ export default function ContratosPage() {
   const [renModal, setRenModal] = useState({ open:false, item:null, data: EMPTY_R })
   const [garModal, setGarModal] = useState({ open:false, item:null, list:[], newG: EMPTY_G })
   const [confirm, setConfirm]   = useState({ open:false, garanteId:null })
+  const [histModal, setHistModal] = useState({ open:false, item:null, rows:[], loading:false })
+  const SERVICIOS_OPC = ['Luz','Gas','Agua','Expensas','Municipal']
+  const [servModal, setServModal] = useState({ open:false, data:null, selected: [...['Luz','Gas','Agua','Expensas','Municipal']] })
   const [propList, setPropList] = useState([])
   const [cliList,  setCliList]  = useState([])
   const [agList,   setAgList]   = useState([])
@@ -73,12 +77,18 @@ export default function ContratosPage() {
     if (!d.tipo || !d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
       toast.error('Completá los campos requeridos'); return
     }
+    setServModal({ open:true, data:d, selected:[...SERVICIOS_OPC] })
+  }
+
+  async function handleConfirmarContrato() {
+    const d = servModal.data
     setSaving(true)
     try {
-      const payload = { ...d, monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null }
+      const payload = { ...d, monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null, servicios: servModal.selected }
       const res = await createContrato(payload)
       if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
       toast.success('Contrato guardado')
+      setServModal(m => ({ ...m, open:false }))
       load(page)
     } catch(e) { toast.error(e?.message || 'Error al guardar'); return }
     finally { setSaving(false) }
@@ -150,6 +160,15 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
     w.document.write(doc)
     w.document.close()
     setModal(m => ({ ...m, open:false }))
+    setServModal(m => ({ ...m, open:false }))
+  }
+
+  async function openHistorial(item) {
+    setHistModal({ open:true, item, rows:[], loading:true })
+    try {
+      const res = await getPagosByContrato(item.id)
+      setHistModal(m => ({ ...m, rows: res?.success ? (res.data?.pagos || []) : [], loading:false }))
+    } catch { setHistModal(m => ({ ...m, loading:false })) }
   }
 
   async function handleCambiarEstado() {
@@ -248,6 +267,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
                       <td><span className={`badge ${BADG_E[r.estado]||''}`}>{r.estado}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, fecha_inicio: r.fecha_inicio?.slice(0,10), fecha_fin: r.fecha_fin?.slice(0,10) })}><i className="bi bi-pencil" /></button>
+                        <button className="btn btn-outline btn-sm btn-icon" title="Historial de pagos" onClick={() => openHistorial(r)}><i className="bi bi-clock-history" /></button>
                         <button className="btn btn-outline btn-sm btn-icon" title="Garantes" onClick={() => openGarantes(r)}><i className="bi bi-people" /></button>
                         {r.estado === 'Activo' && <>
                           <button className="btn btn-warning btn-sm btn-icon" title="Cambiar estado" onClick={() => setEstModal({ open:true, item:r, estado:'Finalizado' })}><i className="bi bi-toggle-off" /></button>
@@ -373,6 +393,53 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm({ open:false, garanteId:null })} onConfirm={handleRemoveGarante}
         title="Quitar garante" message="¿Eliminar este garante del contrato?" />
+
+      {/* Modal selección de servicios */}
+      <Modal open={servModal.open} onClose={() => setServModal(m => ({ ...m, open:false }))} title="Servicios a contratar"
+        footer={<>
+          <button className="btn btn-outline" onClick={() => setServModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-primary" onClick={handleConfirmarContrato} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-printer" /> Confirmar y generar</>}</button>
+        </>}
+      >
+        <p style={{ fontSize:'.85rem', color:'var(--tx-3)', marginBottom:'1.25rem' }}>
+          Seleccioná los servicios básicos que se crearán automáticamente para esta propiedad.
+        </p>
+        <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
+          {SERVICIOS_OPC.map(s => (
+            <label key={s} style={{ display:'flex', alignItems:'center', gap:'.75rem', cursor:'pointer', padding:'.5rem .75rem', border:'1px solid #e2e8f0', borderRadius:8, background: servModal.selected.includes(s) ? '#eff6ff' : '#f8fafc' }}>
+              <input type="checkbox" checked={servModal.selected.includes(s)}
+                onChange={e => setServModal(m => ({ ...m, selected: e.target.checked ? [...m.selected, s] : m.selected.filter(x => x !== s) }))}
+                style={{ width:16, height:16, accentColor:'#1d4ed8' }} />
+              <span style={{ fontWeight:600, fontSize:'.9rem' }}>{s}</span>
+            </label>
+          ))}
+        </div>
+        <p style={{ fontSize:'.78rem', color:'var(--tx-4)', marginTop:'1rem' }}>
+          Podés editarlos y completar los montos desde el módulo Servicios.
+        </p>
+      </Modal>
+
+      {/* Modal historial de pagos */}
+      <Modal open={histModal.open} onClose={() => setHistModal(m => ({ ...m, open:false }))} title={`Historial — Contrato #${histModal.item?.id}`} size="lg">
+        {histModal.loading
+          ? <div style={{ textAlign:'center', padding:'2rem' }}><Spinner /></div>
+          : histModal.rows.length === 0
+            ? <p style={{ color:'var(--tx-4)', fontSize:'.9rem', padding:'1rem 0' }}>No hay movimientos registrados para este contrato.</p>
+            : <table>
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Monto</th></tr></thead>
+                <tbody>
+                  {histModal.rows.map(p => (
+                    <tr key={p.id}>
+                      <td>{p.fecha_pago ? new Date(p.fecha_pago + 'T12:00:00').toLocaleDateString('es-AR') : '—'}</td>
+                      <td><span className={`badge ${p.tipo === 'Ingreso' ? 'badge-activo' : 'badge-inactivo'}`}>{p.tipo}</span></td>
+                      <td>{p.concepto}</td>
+                      <td style={{ fontWeight:600 }}>{p.moneda} {Number(p.monto).toLocaleString('es-AR', { minimumFractionDigits:2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+        }
+      </Modal>
     </>
   )
 }
