@@ -7,7 +7,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { nombre:'', apellido:'', dni_cuit:'', email:'', telefono:'', matricula:'', comision_pct:0 }
+const EMPTY = { nombre:'', apellido:'', email:'' }
 
 export default function AgentesPage() {
   const [rows, setRows]       = useState([])
@@ -84,18 +84,15 @@ export default function AgentesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Nombre</th><th>Apellido</th><th>Matrícula</th><th>Teléfono</th><th>Email</th><th>Comisión %</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Apellido</th><th>Nombre</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
-                  ? <tr><td colSpan={8}><EmptyState icon="bi-person-badge" message="No hay agentes" /></td></tr>
+                  ? <tr><td colSpan={5}><EmptyState icon="bi-person-badge" message="No hay agentes" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
-                      <td><strong>{r.nombre}</strong></td>
-                      <td>{r.apellido}</td>
-                      <td>{r.matricula || '—'}</td>
-                      <td>{r.telefono || '—'}</td>
+                      <td><strong>{r.apellido}</strong></td>
+                      <td>{r.nombre}</td>
                       <td>{r.email || '—'}</td>
-                      <td>{r.comision_pct}%</td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" onClick={() => setModal({ open:true, data:{...r} })}><i className="bi bi-pencil" /></button>
@@ -122,18 +119,7 @@ export default function AgentesPage() {
           <div className="form-group"><label className="form-label">Apellido *</label><input className="form-control" value={modal.data.apellido||''} onChange={setF('apellido')} /></div>
           <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
         </div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} /></div>
-          <div className="form-group"><label className="form-label">Matrícula</label><input className="form-control" value={modal.data.matricula||''} onChange={setF('matricula')} /></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
-          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Comisión %</label>
-          <input className="form-control" type="number" min="0" max="100" step="0.01" value={modal.data.comision_pct||0} onChange={setF('comision_pct')} />
-        </div>
+        <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}

@@ -10,7 +10,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY_C = { tipo:'Alquiler', propiedad_id:'', cliente_id:'', agente_id:'', fecha_inicio:'', fecha_fin:'', monto:'', moneda:'USD', observaciones:'' }
+const EMPTY_C = { tipo:'Alquiler', propiedad_id:'', cliente_id:'', agente_id:'', fecha_inicio:'', fecha_fin:'', monto:'', moneda:'USD' }
 const EMPTY_G = { nombre:'', apellido:'', dni_cuit:'', telefono:'', email:'', direccion:'' }
 const EMPTY_R = { nueva_fecha_fin:'', nuevo_monto:'', nueva_moneda:'', observaciones:'' }
 const BADG_E  = { Activo:'badge-activo', Finalizado:'badge-vendida', Cancelado:'badge-inactivo' }
@@ -291,7 +291,6 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           <div className="form-group"><label className="form-label">Fecha fin</label><input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} /></div>
         </div>
         <div className="form-group"><label className="form-label">Monto *</label><input className="form-control" type="number" value={modal.data.monto||''} onChange={setF('monto')} /></div>
-        <div className="form-group"><label className="form-label">Observaciones</label><textarea className="form-control" rows={2} value={modal.data.observaciones||''} onChange={setF('observaciones')} /></div>
       </Modal>
 
       {/* Estado modal */}
