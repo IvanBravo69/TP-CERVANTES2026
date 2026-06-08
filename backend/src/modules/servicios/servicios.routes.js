@@ -4,7 +4,7 @@ const validate = require('../../middlewares/validate');
 const { authenticate, authorize } = require('../../middlewares/auth');
 const ctrl = require('./servicios.controller');
 
-const TIPOS = ['ABL','Luz','Gas','Agua','Expensas','Municipal','Otro'];
+const TIPOS = ['Luz','Gas','Agua','Expensas','Municipal','Otro'];
 
 const validarId = [param('id').isInt({ min: 1 }).withMessage('ID inválido'), validate];
 

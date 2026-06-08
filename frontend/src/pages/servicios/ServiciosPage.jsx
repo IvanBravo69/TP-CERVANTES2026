@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getServicios, createServicio, updateServicio, pagarServicio } from '../../api/servicios'
-import { getContratos } from '../../api/contratos'
+import { getPropiedades } from '../../api/propiedades'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { contrato_id:'', tipo:'ABL', monto:'', moneda:'ARS', fecha_vencimiento:'', periodo:'' }
+const EMPTY = { propiedad_id:'', tipo:'Luz', monto:'', moneda:'ARS', fecha_vencimiento:'', periodo:'' }
 
 export default function ServiciosPage() {
   const [rows, setRows]       = useState([])
@@ -19,7 +19,7 @@ export default function ServiciosPage() {
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [pagarModal, setPagarModal] = useState({ open:false, item:null, fecha:'' })
   const [saving, setSaving]   = useState(false)
-  const [contratos, setContratos] = useState([])
+  const [propiedades, setPropiedades] = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -36,14 +36,14 @@ export default function ServiciosPage() {
 
   async function openModal(data = { ...EMPTY }) {
     setModal({ open:true, data })
-    const rc = await getContratos({ limit:200 })
-    if (rc?.success) setContratos(rc.data.rows)
+    const rp = await getPropiedades({ limit:200 })
+    if (rp?.success) setPropiedades(rp.data.rows)
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      const payload = { ...modal.data, monto: Number(modal.data.monto), contrato_id: modal.data.contrato_id || null }
+      const payload = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id) }
       const res = modal.data.id ? await updateServicio(modal.data.id, payload) : await createServicio(payload)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
       toast.success(modal.data.id ? 'Servicio actualizado' : 'Servicio creado')
@@ -64,12 +64,12 @@ export default function ServiciosPage() {
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
-  const TIPOS = ['ABL','Luz','Gas','Agua','Expensas','Municipal','Otro']
+  const TIPOS = ['Luz','Gas','Agua','Expensas','Municipal','Otro']
 
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div><h1>Servicios e Impuestos</h1><p>ABL, luz, gas y otros servicios</p></div>
+        <div><h1>Servicios e Impuestos</h1><p>Luz, gas, agua y otros servicios</p></div>
         <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-plus-lg" /> Servicio</button>
       </div>
 
@@ -153,10 +153,10 @@ export default function ServiciosPage() {
           <div className="form-group"><label className="form-label">Vencimiento</label>
             <input className="form-control" type="date" value={modal.data.fecha_vencimiento||''} onChange={setF('fecha_vencimiento')} />
           </div>
-          <div className="form-group"><label className="form-label">Contrato</label>
-            <select className="form-select" value={modal.data.contrato_id||''} onChange={setF('contrato_id')}>
-              <option value="">Sin contrato</option>
-              {contratos.map(c => <option key={c.id} value={c.id}>#{c.id} — {c.propiedad_titulo || c.id}</option>)}
+          <div className="form-group"><label className="form-label">Propiedad *</label>
+            <select className="form-select" value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
+              <option value="">Seleccioná una propiedad</option>
+              {propiedades.map(p => <option key={p.id} value={p.id}>{p.titulo} — {p.direccion}</option>)}
             </select>
           </div>
         </div>

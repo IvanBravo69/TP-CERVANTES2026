@@ -1,17 +1,32 @@
 -- ============================================================
 -- SISTEMA BRITOS — Schema completo con todas las migraciones
--- Versión: incluye 001 al 008
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS sistema_britos
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
+USE defaultdb;
 
-USE sistema_britos;
+-- Limpia tablas existentes (en orden inverso de dependencias)
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS honorarios;
+DROP TABLE IF EXISTS config_comisiones;
+DROP TABLE IF EXISTS recibos;
+DROP TABLE IF EXISTS servicios;
+DROP TABLE IF EXISTS pagos;
+DROP TABLE IF EXISTS contrato_garantes;
+DROP TABLE IF EXISTS garantes;
+DROP TABLE IF EXISTS contratos;
+DROP TABLE IF EXISTS propiedades;
+DROP TABLE IF EXISTS agentes;
+DROP TABLE IF EXISTS clientes;
+DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS roles_permisos;
+DROP TABLE IF EXISTS permisos;
+DROP TABLE IF EXISTS roles;
+SET FOREIGN_KEY_CHECKS = 1;
 
--- ------------------------------------------------------------
--- ROLES
--- ------------------------------------------------------------
+-- ============================================================
+-- TABLAS
+-- ============================================================
+
 CREATE TABLE roles (
   id      INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nombre  VARCHAR(50)  NOT NULL UNIQUE,
@@ -19,53 +34,12 @@ CREATE TABLE roles (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
-INSERT INTO roles (nombre) VALUES
-  ('Admin'),
-  ('Ventas'),
-  ('Alquileres'),
-  ('Contabilidad');
-
--- ------------------------------------------------------------
--- PERMISOS
--- ------------------------------------------------------------
 CREATE TABLE permisos (
   id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nombre VARCHAR(80)  NOT NULL UNIQUE,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
-INSERT INTO permisos (nombre) VALUES
-  ('VER_USUARIOS'),
-  ('CREAR_USUARIOS'),
-  ('EDITAR_USUARIOS'),
-  ('DESACTIVAR_USUARIOS'),
-  ('VER_ROLES'),
-  ('VER_PERMISOS'),
-  ('VER_CLIENTES'),
-  ('CREAR_CLIENTES'),
-  ('EDITAR_CLIENTES'),
-  ('VER_PROPIEDADES'),
-  ('CREAR_PROPIEDADES'),
-  ('EDITAR_PROPIEDADES'),
-  ('VER_CONTRATOS'),
-  ('CREAR_CONTRATOS'),
-  ('EDITAR_CONTRATOS'),
-  ('VER_FINANZAS'),
-  ('VER_REPORTES'),
-  ('VER_AGENTES'),
-  ('CREAR_AGENTES'),
-  ('EDITAR_AGENTES'),
-  ('VER_SERVICIOS'),
-  ('CREAR_SERVICIOS'),
-  ('EDITAR_SERVICIOS'),
-  ('VER_RECIBOS'),
-  ('CREAR_RECIBOS'),
-  ('VER_HONORARIOS'),
-  ('GESTIONAR_HONORARIOS');
-
--- ------------------------------------------------------------
--- ROLES_PERMISOS
--- ------------------------------------------------------------
 CREATE TABLE roles_permisos (
   role_id    INT UNSIGNED NOT NULL,
   permiso_id INT UNSIGNED NOT NULL,
@@ -74,50 +48,6 @@ CREATE TABLE roles_permisos (
   CONSTRAINT fk_rp_permiso FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Admin: todos los permisos
-INSERT INTO roles_permisos (role_id, permiso_id)
-SELECT 1, id FROM permisos;
-
--- Ventas
-INSERT INTO roles_permisos (role_id, permiso_id)
-SELECT 2, id FROM permisos
-WHERE nombre IN (
-  'VER_CLIENTES','CREAR_CLIENTES','EDITAR_CLIENTES',
-  'VER_PROPIEDADES','CREAR_PROPIEDADES','EDITAR_PROPIEDADES',
-  'VER_CONTRATOS','CREAR_CONTRATOS',
-  'VER_AGENTES','CREAR_AGENTES','EDITAR_AGENTES',
-  'VER_SERVICIOS','CREAR_SERVICIOS','EDITAR_SERVICIOS',
-  'VER_RECIBOS','CREAR_RECIBOS',
-  'VER_HONORARIOS'
-);
-
--- Alquileres
-INSERT INTO roles_permisos (role_id, permiso_id)
-SELECT 3, id FROM permisos
-WHERE nombre IN (
-  'VER_CLIENTES','CREAR_CLIENTES','EDITAR_CLIENTES',
-  'VER_PROPIEDADES','VER_CONTRATOS','CREAR_CONTRATOS','EDITAR_CONTRATOS',
-  'VER_AGENTES',
-  'VER_SERVICIOS','CREAR_SERVICIOS','EDITAR_SERVICIOS',
-  'VER_RECIBOS','CREAR_RECIBOS',
-  'VER_HONORARIOS'
-);
-
--- Contabilidad
-INSERT INTO roles_permisos (role_id, permiso_id)
-SELECT 4, id FROM permisos
-WHERE nombre IN (
-  'VER_FINANZAS','VER_REPORTES',
-  'VER_CONTRATOS','VER_CLIENTES',
-  'VER_AGENTES',
-  'VER_SERVICIOS',
-  'VER_RECIBOS','CREAR_RECIBOS',
-  'VER_HONORARIOS','GESTIONAR_HONORARIOS'
-);
-
--- ------------------------------------------------------------
--- USUARIOS
--- ------------------------------------------------------------
 CREATE TABLE usuarios (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   username   VARCHAR(50)  NOT NULL UNIQUE,
@@ -135,17 +65,6 @@ CREATE TABLE usuarios (
   CONSTRAINT fk_usuario_role FOREIGN KEY (role_id) REFERENCES roles(id)
 ) ENGINE=InnoDB;
 
--- Usuario admin por defecto  password: Admin1234!
-INSERT INTO usuarios (username, password, full_name, email, role_id) VALUES
-  ('admin',
-   '$2a$12$K8GpOhHPFxHPpGCk6i9cQOhL8vBExNJalIv5KRZDrj63MBvlxH8uy',
-   'Administrador Sistema',
-   'admin@sistemabitos.com',
-   1);
-
--- ------------------------------------------------------------
--- CLIENTES  (incluye campos de migración 008)
--- ------------------------------------------------------------
 CREATE TABLE clientes (
   id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   tipo         ENUM('Persona','Empresa') NOT NULL DEFAULT 'Persona',
@@ -169,9 +88,6 @@ CREATE TABLE clientes (
   INDEX idx_nombre (nombre)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- AGENTES  (migración 004)
--- ------------------------------------------------------------
 CREATE TABLE agentes (
   id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   nombre       VARCHAR(120)  NOT NULL,
@@ -188,9 +104,6 @@ CREATE TABLE agentes (
   INDEX idx_agente_dni (dni_cuit)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- PROPIEDADES  (incluye agente_id de migración 004)
--- ------------------------------------------------------------
 CREATE TABLE propiedades (
   id             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   tipo           ENUM('Casa','Departamento','Local','Terreno','Oficina','Otro') NOT NULL,
@@ -211,17 +124,14 @@ CREATE TABLE propiedades (
   created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  INDEX idx_estado       (estado),
-  INDEX idx_operacion    (operacion),
-  INDEX idx_tipo         (tipo),
-  INDEX idx_prop_agente  (agente_id),
+  INDEX idx_estado      (estado),
+  INDEX idx_operacion   (operacion),
+  INDEX idx_tipo        (tipo),
+  INDEX idx_prop_agente (agente_id),
   CONSTRAINT fk_prop_propietario FOREIGN KEY (propietario_id) REFERENCES clientes(id),
   CONSTRAINT fk_prop_agente      FOREIGN KEY (agente_id)      REFERENCES agentes(id)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- CONTRATOS  (incluye contrato_origen_id mig. 002, agente_id mig. 004)
--- ------------------------------------------------------------
 CREATE TABLE contratos (
   id                 INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   tipo               ENUM('Venta','Alquiler') NOT NULL,
@@ -248,9 +158,6 @@ CREATE TABLE contratos (
   CONSTRAINT fk_contrato_origen    FOREIGN KEY (contrato_origen_id) REFERENCES contratos(id)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- GARANTES  (migración 003)
--- ------------------------------------------------------------
 CREATE TABLE garantes (
   id            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   nombre        VARCHAR(120)  NOT NULL,
@@ -274,9 +181,6 @@ CREATE TABLE contrato_garantes (
   CONSTRAINT fk_cg_garante  FOREIGN KEY (garante_id)  REFERENCES garantes(id)  ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- PAGOS  (migración 001 + nro_comprobante de mig. 006)
--- ------------------------------------------------------------
 CREATE TABLE pagos (
   id              INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   contrato_id     INT UNSIGNED  NOT NULL,
@@ -295,13 +199,10 @@ CREATE TABLE pagos (
   CONSTRAINT fk_pago_contrato FOREIGN KEY (contrato_id) REFERENCES contratos(id)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- SERVICIOS  (migración 005)
--- ------------------------------------------------------------
 CREATE TABLE servicios (
   id                INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   propiedad_id      INT UNSIGNED  NOT NULL,
-  tipo              ENUM('ABL','Luz','Gas','Agua','Expensas','Municipal','Otro') NOT NULL,
+  tipo              ENUM('Luz','Gas','Agua','Expensas','Municipal','Otro') NOT NULL,
   proveedor         VARCHAR(120)  NULL,
   periodo           VARCHAR(7)    NULL,
   monto             DECIMAL(14,2) NULL,
@@ -319,9 +220,6 @@ CREATE TABLE servicios (
   CONSTRAINT fk_servicio_propiedad FOREIGN KEY (propiedad_id) REFERENCES propiedades(id)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- RECIBOS  (migración 006)
--- ------------------------------------------------------------
 CREATE TABLE recibos (
   id              INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   numero          INT UNSIGNED  NOT NULL UNIQUE,
@@ -343,9 +241,6 @@ CREATE TABLE recibos (
   CONSTRAINT fk_recibo_pago     FOREIGN KEY (pago_id)     REFERENCES pagos(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- CONFIG COMISIONES  (migración 007)
--- ------------------------------------------------------------
 CREATE TABLE config_comisiones (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   tipo       ENUM('Honorario_Venta','Honorario_Alquiler','Administracion') NOT NULL UNIQUE,
@@ -354,14 +249,6 @@ CREATE TABLE config_comisiones (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
-INSERT INTO config_comisiones (tipo, porcentaje) VALUES
-  ('Honorario_Venta',    3.00),
-  ('Honorario_Alquiler', 5.00),
-  ('Administracion',    10.00);
-
--- ------------------------------------------------------------
--- HONORARIOS  (migración 007)
--- ------------------------------------------------------------
 CREATE TABLE honorarios (
   id            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   contrato_id   INT UNSIGNED  NOT NULL,
@@ -380,3 +267,69 @@ CREATE TABLE honorarios (
   INDEX idx_honorario_tipo     (tipo),
   CONSTRAINT fk_honorario_contrato FOREIGN KEY (contrato_id) REFERENCES contratos(id)
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- DATOS INICIALES
+-- ============================================================
+
+INSERT INTO roles (nombre) VALUES
+  ('Admin'), ('Ventas'), ('Alquileres'), ('Contabilidad');
+
+INSERT INTO permisos (nombre) VALUES
+  ('VER_USUARIOS'), ('CREAR_USUARIOS'), ('EDITAR_USUARIOS'), ('DESACTIVAR_USUARIOS'),
+  ('VER_ROLES'), ('VER_PERMISOS'),
+  ('VER_CLIENTES'), ('CREAR_CLIENTES'), ('EDITAR_CLIENTES'),
+  ('VER_PROPIEDADES'), ('CREAR_PROPIEDADES'), ('EDITAR_PROPIEDADES'),
+  ('VER_CONTRATOS'), ('CREAR_CONTRATOS'), ('EDITAR_CONTRATOS'),
+  ('VER_FINANZAS'), ('VER_REPORTES'),
+  ('VER_AGENTES'), ('CREAR_AGENTES'), ('EDITAR_AGENTES'),
+  ('VER_SERVICIOS'), ('CREAR_SERVICIOS'), ('EDITAR_SERVICIOS'),
+  ('VER_RECIBOS'), ('CREAR_RECIBOS'),
+  ('VER_HONORARIOS'), ('GESTIONAR_HONORARIOS');
+
+-- Admin: todos los permisos
+INSERT INTO roles_permisos (role_id, permiso_id)
+SELECT 1, id FROM permisos;
+
+-- Ventas
+INSERT INTO roles_permisos (role_id, permiso_id)
+SELECT 2, id FROM permisos WHERE nombre IN (
+  'VER_CLIENTES','CREAR_CLIENTES','EDITAR_CLIENTES',
+  'VER_PROPIEDADES','CREAR_PROPIEDADES','EDITAR_PROPIEDADES',
+  'VER_CONTRATOS','CREAR_CONTRATOS',
+  'VER_AGENTES','CREAR_AGENTES','EDITAR_AGENTES',
+  'VER_SERVICIOS','CREAR_SERVICIOS','EDITAR_SERVICIOS',
+  'VER_RECIBOS','CREAR_RECIBOS','VER_HONORARIOS'
+);
+
+-- Alquileres
+INSERT INTO roles_permisos (role_id, permiso_id)
+SELECT 3, id FROM permisos WHERE nombre IN (
+  'VER_CLIENTES','CREAR_CLIENTES','EDITAR_CLIENTES',
+  'VER_PROPIEDADES','VER_CONTRATOS','CREAR_CONTRATOS','EDITAR_CONTRATOS',
+  'VER_AGENTES',
+  'VER_SERVICIOS','CREAR_SERVICIOS','EDITAR_SERVICIOS',
+  'VER_RECIBOS','CREAR_RECIBOS','VER_HONORARIOS'
+);
+
+-- Contabilidad
+INSERT INTO roles_permisos (role_id, permiso_id)
+SELECT 4, id FROM permisos WHERE nombre IN (
+  'VER_FINANZAS','VER_REPORTES','VER_CONTRATOS','VER_CLIENTES',
+  'VER_AGENTES','VER_SERVICIOS',
+  'VER_RECIBOS','CREAR_RECIBOS',
+  'VER_HONORARIOS','GESTIONAR_HONORARIOS'
+);
+
+-- Usuario admin por defecto  password: Admin1234!
+INSERT INTO usuarios (username, password, full_name, email, role_id) VALUES
+  ('admin',
+   '$2a$12$K8GpOhHPFxHPpGCk6i9cQOhL8vBExNJalIv5KRZDrj63MBvlxH8uy',
+   'Administrador Sistema',
+   'admin@sistemabitos.com',
+   1);
+
+INSERT INTO config_comisiones (tipo, porcentaje) VALUES
+  ('Honorario_Venta', 3.00),
+  ('Honorario_Alquiler', 5.00),
+  ('Administracion', 10.00);
