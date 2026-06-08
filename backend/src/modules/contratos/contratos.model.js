@@ -20,7 +20,7 @@ const SELECT_BASE = `
   LEFT JOIN agentes a ON a.id = c.agente_id
 `;
 
-async function findAll({ page = 1, limit = 20, tipo, estado, cliente_id, propiedad_id, agente_id } = {}) {
+async function findAll({ page = 1, limit = 20, tipo, estado, cliente_id, propiedad_id, agente_id, search } = {}) {
   const offset = (page - 1) * limit;
   const conds  = [];
   const params = [];
@@ -30,11 +30,16 @@ async function findAll({ page = 1, limit = 20, tipo, estado, cliente_id, propied
   if (cliente_id)   { conds.push('c.cliente_id = ?');   params.push(cliente_id); }
   if (propiedad_id) { conds.push('c.propiedad_id = ?'); params.push(propiedad_id); }
   if (agente_id)    { conds.push('c.agente_id = ?');    params.push(agente_id); }
+  if (search) {
+    const like = `%${search}%`;
+    conds.push('(c.id = ? OR CONCAT(cl.nombre," ",cl.apellido) LIKE ? OR cl.apellido LIKE ? OR p.titulo LIKE ?)');
+    params.push(Number(search) || 0, like, like, like);
+  }
 
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
   const [[{ total }]] = await pool.execute(
-    `SELECT COUNT(*) AS total FROM contratos c ${where}`,
+    `SELECT COUNT(*) AS total FROM contratos c JOIN propiedades p ON p.id = c.propiedad_id JOIN clientes cl ON cl.id = c.cliente_id LEFT JOIN agentes a ON a.id = c.agente_id ${where}`,
     params
   );
 

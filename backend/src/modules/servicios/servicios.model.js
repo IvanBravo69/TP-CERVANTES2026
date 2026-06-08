@@ -11,7 +11,9 @@ const SELECT_BASE = `
   LEFT JOIN contratos c ON c.propiedad_id = s.propiedad_id AND c.estado = 'Activo'
 `;
 
-async function findAll({ page = 1, limit = 20, propiedad_id, tipo, estado, desde, hasta } = {}) {
+const COUNT_FROM = `FROM servicios s JOIN propiedades p ON p.id = s.propiedad_id LEFT JOIN contratos c ON c.propiedad_id = s.propiedad_id AND c.estado = 'Activo'`;
+
+async function findAll({ page = 1, limit = 20, propiedad_id, tipo, estado, desde, hasta, contrato_id } = {}) {
   const offset = (page - 1) * limit;
   const conds  = [];
   const params = [];
@@ -21,10 +23,11 @@ async function findAll({ page = 1, limit = 20, propiedad_id, tipo, estado, desde
   if (estado)       { conds.push('s.estado = ?');               params.push(estado); }
   if (desde)        { conds.push('s.fecha_vencimiento >= ?');   params.push(desde); }
   if (hasta)        { conds.push('s.fecha_vencimiento <= ?');   params.push(hasta); }
+  if (contrato_id)  { conds.push('c.id = ?');                   params.push(contrato_id); }
 
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
-  const [[{ total }]] = await pool.execute(`SELECT COUNT(*) AS total FROM servicios s ${where}`, params);
+  const [[{ total }]] = await pool.execute(`SELECT COUNT(*) AS total ${COUNT_FROM} ${where}`, params);
   const [rows] = await pool.execute(
     `${SELECT_BASE} ${where} ORDER BY s.fecha_vencimiento ASC, s.id DESC LIMIT ${limit} OFFSET ${offset}`,
     params

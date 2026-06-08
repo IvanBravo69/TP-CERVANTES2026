@@ -10,7 +10,8 @@ async function listar(query) {
   const propiedad_id = query.propiedad_id ? parseInt(query.propiedad_id) : undefined;
   const tipo        = TIPOS.includes(query.tipo) ? query.tipo : undefined;
   const estado      = ['Pendiente','Pagado'].includes(query.estado) ? query.estado : undefined;
-  return model.findAll({ page, limit, propiedad_id, tipo, estado, desde: query.desde, hasta: query.hasta });
+  const contrato_id = query.contrato_id ? parseInt(query.contrato_id) : undefined;
+  return model.findAll({ page, limit, propiedad_id, tipo, estado, desde: query.desde, hasta: query.hasta, contrato_id });
 }
 
 async function obtener(id) {

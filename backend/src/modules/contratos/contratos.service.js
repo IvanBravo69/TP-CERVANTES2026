@@ -17,7 +17,8 @@ async function listar(query) {
   const estado      = ESTADOS.includes(query.estado) ? query.estado : undefined;
   const cliente_id  = query.cliente_id  ? parseInt(query.cliente_id)  : undefined;
   const propiedad_id = query.propiedad_id ? parseInt(query.propiedad_id) : undefined;
-  return model.findAll({ page, limit, tipo, estado, cliente_id, propiedad_id });
+  const search      = query.search?.trim() || undefined;
+  return model.findAll({ page, limit, tipo, estado, cliente_id, propiedad_id, search });
 }
 
 async function obtener(id) {

@@ -75,6 +75,10 @@ export default function ServiciosPage() {
 
       <div className="filters-bar">
         <div className="filter-group">
+          <label>Contrato #</label>
+          <input className="filter-input" style={{ width:110 }} type="number" placeholder="Nro..." value={filters.contrato_id} onChange={set('contrato_id')} />
+        </div>
+        <div className="filter-group">
           <label>Tipo</label>
           <select className="filter-input" value={filters.tipo} onChange={set('tipo')}>
             <option value="">Todos</option>

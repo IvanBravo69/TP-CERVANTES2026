@@ -20,7 +20,7 @@ export default function ContratosPage() {
   const [total, setTotal]       = useState(0)
   const [page, setPage]         = useState(1)
   const [loading, setLoading]   = useState(false)
-  const [filters, setFilters]   = useState({ tipo:'', estado:'', })
+  const [filters, setFilters]   = useState({ tipo:'', estado:'', search:'' })
   const [modal, setModal]       = useState({ open:false, data: EMPTY_C })
   const [saving, setSaving]     = useState(false)
   const [estModal, setEstModal] = useState({ open:false, item:null, estado:'' })
@@ -212,6 +212,10 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
       </div>
 
       <div className="filters-bar">
+        <div className="filter-group">
+          <label>Buscar</label>
+          <input className="filter-input" style={{ width:220 }} placeholder="# contrato, cliente, propiedad..." value={filters.search} onChange={set('search')} />
+        </div>
         <div className="filter-group"><label>Tipo</label>
           <select className="filter-input" value={filters.tipo} onChange={set('tipo')}>
             <option value="">Todos</option><option>Venta</option><option>Alquiler</option>

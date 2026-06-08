@@ -16,7 +16,7 @@ export default function CobrosPage() {
   const [totales, setTotales] = useState({})
   const [page, setPage]       = useState(1)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ moneda:'', desde:'', hasta:'' })
+  const [filters, setFilters] = useState({ contrato_id:'', moneda:'', desde:'', hasta:'' })
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [saving, setSaving]   = useState(false)
   const [confirm, setConfirm] = useState({ open:false, item:null })
@@ -96,6 +96,10 @@ export default function CobrosPage() {
       )}
 
       <div className="filters-bar">
+        <div className="filter-group">
+          <label>Contrato #</label>
+          <input className="filter-input" style={{ width:110 }} type="number" placeholder="Nro..." value={filters.contrato_id} onChange={set('contrato_id')} />
+        </div>
         <div className="filter-group">
           <label>Moneda</label>
           <select className="filter-input" value={filters.moneda} onChange={set('moneda')}>
