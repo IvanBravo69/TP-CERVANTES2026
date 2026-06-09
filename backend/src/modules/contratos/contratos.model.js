@@ -32,7 +32,7 @@ async function findAll({ page = 1, limit = 20, tipo, estado, cliente_id, propied
   if (agente_id)    { conds.push('c.agente_id = ?');    params.push(agente_id); }
   if (search) {
     const like = `%${search}%`;
-    conds.push('(c.id = ? OR CONCAT(cl.nombre," ",cl.apellido) LIKE ? OR cl.apellido LIKE ? OR p.titulo LIKE ?)');
+    conds.push('(c.id = ? OR CONCAT(cl.nombre," ",cl.apellido) LIKE ? OR cl.apellido LIKE ? OR p.direccion LIKE ?)');
     params.push(Number(search) || 0, like, like, like);
   }
 

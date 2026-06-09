@@ -9,7 +9,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { tipo:'Casa', operacion:'Alquiler', titulo:'', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
+const EMPTY = { tipo:'Casa', operacion:'Alquiler', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
 const BADG  = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
 // Dormitorios determinan el conteo de ambientes (arg: dorm+1, o monoambiente si dorm=0)
@@ -74,6 +74,9 @@ export default function PropiedadesPage() {
   }
 
   async function handleSave() {
+    if (!modal.data.direccion?.trim()) { toast.error('La dirección es obligatoria'); return }
+    if (!modal.data.ciudad?.trim())    { toast.error('La ciudad es obligatoria');    return }
+    if (!modal.data.precio)            { toast.error('El precio es obligatorio');    return }
     setSaving(true)
     try {
       const ambientes = calcAmbientes(habitaciones.dormitorios)
@@ -129,13 +132,13 @@ export default function PropiedadesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Título</th><th>Tipo</th><th>Operación</th><th>Ciudad</th><th>Precio</th><th>Estado</th><th>Agente</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Dirección</th><th>Tipo</th><th>Operación</th><th>Ciudad</th><th>Precio</th><th>Estado</th><th>Agente</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
                   ? <tr><td colSpan={8}><EmptyState icon="bi-building" message="No hay propiedades" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
-                      <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.titulo}</td>
+                      <td style={{ maxWidth:220, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.direccion}</td>
                       <td>{r.tipo}</td>
                       <td><span className={`badge badge-${r.operacion === 'Venta' ? 'venta' : 'alquiler'}`}>{r.operacion}</span></td>
                       <td>{r.ciudad}</td>
@@ -174,7 +177,6 @@ export default function PropiedadesPage() {
             </select>
           </div>
         </div>
-        <div className="form-group"><label className="form-label">Título *</label><input className="form-control" value={modal.data.titulo||''} onChange={setF('titulo')} /></div>
         <div className="form-group"><label className="form-label">Dirección *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
         <div className="form-row-3">
           <div className="form-group"><label className="form-label">Ciudad *</label><input className="form-control" value={modal.data.ciudad||''} onChange={setF('ciudad')} /></div>
@@ -244,7 +246,7 @@ export default function PropiedadesPage() {
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar propiedad' : 'Activar propiedad'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} "${confirm.item?.titulo}"?`}
+        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} la propiedad en ${confirm.item?.direccion}?`}
       />
     </>
   )

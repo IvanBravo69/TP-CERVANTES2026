@@ -170,13 +170,13 @@ export default function Dashboard() {
               </div>
               <div className="table-wrapper">
                 <table>
-                  <thead><tr><th>Titulo</th><th>Tipo</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>Dirección</th><th>Tipo</th><th>Estado</th></tr></thead>
                   <tbody>
                     {(stats?.ultimas_propiedades || []).length === 0
                       ? <tr><td colSpan={3}><div className="empty-state"><i className="bi bi-building" />Sin propiedades</div></td></tr>
                       : (stats?.ultimas_propiedades || []).map(p => (
                         <tr key={p.id}>
-                          <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.titulo}</td>
+                          <td style={{ maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.direccion}</td>
                           <td>{p.tipo}</td>
                           <td><span className={`badge ${BADGE[p.estado] || ''}`}>{p.estado}</span></td>
                         </tr>

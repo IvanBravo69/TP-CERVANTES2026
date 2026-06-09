@@ -61,13 +61,17 @@ export default function ContratosPage() {
   }
 
   async function handleSave() {
+    if (!modal.data.propiedad_id) { toast.error('Seleccioná una propiedad'); return }
+    if (!modal.data.cliente_id)   { toast.error('Seleccioná un cliente');    return }
+    if (!modal.data.fecha_inicio) { toast.error('La fecha de inicio es obligatoria'); return }
+    if (!modal.data.monto)        { toast.error('El monto es obligatorio');   return }
     setSaving(true)
     try {
       const d = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id), cliente_id: Number(modal.data.cliente_id), agente_id: modal.data.agente_id ? Number(modal.data.agente_id) : null, fecha_fin: modal.data.fecha_fin || null }
       const res = modal.data.id ? await updateContrato(modal.data.id, d) : await createContrato(d)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
       toast.success(modal.data.id ? 'Contrato actualizado' : 'Contrato creado')
-      setModal(m => ({ ...m, open:false })); load(page)
+      setModal({ open:false, data: { ...EMPTY_C } }); load(page)
     } catch(e) { toast.error(e?.message || 'Error') }
     finally    { setSaving(false) }
   }
@@ -83,21 +87,28 @@ export default function ContratosPage() {
   async function handleConfirmarContrato() {
     const d = servModal.data
     setSaving(true)
+    let saved = false
     try {
       const payload = { ...d, monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null, servicios: servModal.selected }
       const res = await createContrato(payload)
       if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
       toast.success('Contrato guardado')
-      setServModal(m => ({ ...m, open:false }))
+      saved = true
+      setServModal({ open:false, data:null, selected:[...SERVICIOS_OPC] })
+      setModal({ open:false, data: { ...EMPTY_C } })
       load(page)
-    } catch(e) { toast.error(e?.message || 'Error al guardar'); return }
+    } catch(e) { toast.error(e?.message || 'Error al guardar') }
     finally { setSaving(false) }
+
+    if (!saved) return
+
     const prop   = propList.find(p => String(p.id) === String(d.propiedad_id)) || {}
     const cli    = cliList.find(c => String(c.id) === String(d.cliente_id)) || {}
     const agente = agList.find(a => String(a.id) === String(d.agente_id))
     const fmt    = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
     const fmtD   = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '—'
     const hoy    = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' })
+    const esVenta = d.tipo === 'Venta'
 
     const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Contrato de ${d.tipo}</title>
@@ -121,9 +132,8 @@ h1{text-align:center;font-size:18pt;text-transform:uppercase;letter-spacing:.1em
 
 <div class="sec-title">Propiedad</div>
 <div class="grid">
-  <div class="field"><label>Título:</label><br>${prop.titulo || '—'}</div>
+  <div class="field"><label>Dirección:</label><br>${prop.direccion || '—'}</div>
   <div class="field"><label>Ciudad:</label><br>${prop.ciudad || '—'}</div>
-  <div class="field" style="grid-column:1/-1"><label>Dirección:</label><br>${prop.direccion || '—'}</div>
 </div>
 
 <div class="sec-title">Cliente</div>
@@ -142,8 +152,8 @@ ${agente ? `<div class="sec-title">Agente</div>
 <div class="grid">
   <div class="field"><label>Tipo:</label><br>${d.tipo}</div>
   <div class="field"><label>Monto:</label><br>${d.moneda} ${fmt(d.monto)}</div>
-  <div class="field"><label>Fecha inicio:</label><br>${fmtD(d.fecha_inicio)}</div>
-  <div class="field"><label>Fecha fin:</label><br>${d.fecha_fin ? fmtD(d.fecha_fin) : 'Sin vencimiento'}</div>
+  <div class="field"><label>${esVenta ? 'Fecha de venta' : 'Fecha inicio'}:</label><br>${fmtD(d.fecha_inicio)}</div>
+  ${!esVenta ? `<div class="field"><label>Fecha fin:</label><br>${d.fecha_fin ? fmtD(d.fecha_fin) : 'Sin vencimiento'}</div>` : ''}
 </div>
 
 ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">${d.observaciones}</div>` : ''}
@@ -159,8 +169,6 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
     const w = window.open('', '_blank', 'width=900,height=700')
     w.document.write(doc)
     w.document.close()
-    setModal(m => ({ ...m, open:false }))
-    setServModal(m => ({ ...m, open:false }))
   }
 
   async function openHistorial(item) {
@@ -223,6 +231,19 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
 
+  function handlePropChange(e) {
+    const propId = e.target.value
+    const prop = propList.find(p => String(p.id) === String(propId))
+    setModal(m => ({
+      ...m,
+      data: {
+        ...m.data,
+        propiedad_id: propId,
+        ...(prop?.precio ? { monto: prop.precio, moneda: prop.moneda || m.data.moneda } : {}),
+      }
+    }))
+  }
+
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -259,11 +280,11 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
                     <tr key={r.id}>
                       <td style={{ color:'var(--tx-4)', fontSize:'.75rem' }}>#{r.id}</td>
                       <td><span className={`badge badge-${r.tipo?.toLowerCase()}`}>{r.tipo}</span></td>
-                      <td style={{ maxWidth:150, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.propiedad_titulo}</td>
+                      <td style={{ maxWidth:150, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.propiedad_direccion}</td>
                       <td>{r.cliente_nombre} {r.cliente_apellido||''}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR')}</td>
                       <td>{r.fecha_inicio ? new Date(r.fecha_inicio).toLocaleDateString('es-AR') : '—'}</td>
-                      <td>{r.fecha_fin   ? new Date(r.fecha_fin).toLocaleDateString('es-AR')   : '—'}</td>
+                      <td>{r.tipo === 'Venta' ? '—' : r.fecha_fin ? new Date(r.fecha_fin).toLocaleDateString('es-AR') : '—'}</td>
                       <td><span className={`badge ${BADG_E[r.estado]||''}`}>{r.estado}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, fecha_inicio: r.fecha_inicio?.slice(0,10), fecha_fin: r.fecha_fin?.slice(0,10) })}><i className="bi bi-pencil" /></button>
@@ -302,9 +323,9 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           </div>
         </div>
         <div className="form-group"><label className="form-label">Propiedad *</label>
-          <select className="form-select" value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
+          <select className="form-select" value={modal.data.propiedad_id||''} onChange={handlePropChange}>
             <option value="">Seleccioná una propiedad</option>
-            {propList.map(p => <option key={p.id} value={p.id}>{p.titulo} — {p.ciudad}</option>)}
+            {propList.map(p => <option key={p.id} value={p.id}>{p.direccion} — {p.ciudad}</option>)}
           </select>
         </div>
         <div className="form-group"><label className="form-label">Cliente *</label>
@@ -320,8 +341,13 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           </select>
         </div>
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Fecha inicio *</label><input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={setF('fecha_inicio')} /></div>
-          <div className="form-group"><label className="form-label">Fecha fin</label><input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} /></div>
+          <div className="form-group">
+            <label className="form-label">{modal.data.tipo === 'Venta' ? 'Fecha de venta *' : 'Fecha inicio *'}</label>
+            <input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={setF('fecha_inicio')} />
+          </div>
+          {modal.data.tipo !== 'Venta' && (
+            <div className="form-group"><label className="form-label">Fecha fin</label><input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} /></div>
+          )}
         </div>
         <div className="form-group"><label className="form-label">Monto *</label><input className="form-control" type="number" value={modal.data.monto||''} onChange={setF('monto')} /></div>
       </Modal>

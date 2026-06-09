@@ -41,6 +41,8 @@ export default function ServiciosPage() {
   }
 
   async function handleSave() {
+    if (!modal.data.propiedad_id) { toast.error('Seleccioná una propiedad'); return }
+    if (!modal.data.monto)        { toast.error('El monto es obligatorio');   return }
     setSaving(true)
     try {
       const payload = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id) }
@@ -160,7 +162,7 @@ export default function ServiciosPage() {
           <div className="form-group"><label className="form-label">Propiedad *</label>
             <select className="form-select" value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
               <option value="">Seleccioná una propiedad</option>
-              {propiedades.map(p => <option key={p.id} value={p.id}>{p.titulo} — {p.direccion}</option>)}
+              {propiedades.map(p => <option key={p.id} value={p.id}>{p.direccion}{p.ciudad ? ` — ${p.ciudad}` : ''}</option>)}
             </select>
           </div>
         </div>

@@ -16,7 +16,10 @@ router.get('/', authenticate, async (_req, res, next) => {
         (SELECT COUNT(*) FROM contratos   WHERE estado = 'Activo')                      AS contratos_activos,
         (SELECT COUNT(*) FROM usuarios    WHERE activo = 1)                             AS total_usuarios
     `);
-    ok(res, stats, 'Stats obtenidas');
+    const [ultimas_propiedades] = await pool.execute(
+      `SELECT id, direccion, tipo, estado FROM propiedades WHERE activo = 1 ORDER BY id DESC LIMIT 5`
+    );
+    ok(res, { ...stats, ultimas_propiedades }, 'Stats obtenidas');
   } catch (err) {
     next(err);
   }
