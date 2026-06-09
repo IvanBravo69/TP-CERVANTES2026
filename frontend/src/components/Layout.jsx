@@ -7,12 +7,12 @@ const NAV = [
   { to: '/propiedades', icon: 'bi-building',               label: 'Propiedades',  perm: 'VER_PROPIEDADES' },
   { to: '/agentes',     icon: 'bi-person-badge',           label: 'Agentes',      perm: 'VER_AGENTES' },
   { to: '/contratos',   icon: 'bi-file-earmark-text',      label: 'Contratos',    perm: 'VER_CONTRATOS' },
-  { to: '/servicios',   icon: 'bi-lightning-charge',       label: 'Servicios',    perm: 'VER_SERVICIOS' },
+  // { to: '/servicios',   icon: 'bi-lightning-charge',       label: 'Servicios',    perm: 'VER_SERVICIOS' },
   // { to: '/cobros',      icon: 'bi-arrow-down-circle',      label: 'Cobros',       perm: 'VER_FINANZAS' },
   // { to: '/pagos',       icon: 'bi-arrow-up-circle',        label: 'Pagos',        perm: 'VER_FINANZAS' },
   // { to: '/recibos',     icon: 'bi-receipt',                label: 'Recibos',      perm: 'VER_RECIBOS' },
   // { to: '/honorarios',  icon: 'bi-percent',                label: 'Honorarios',   perm: 'VER_HONORARIOS' },
-  { to: '/reportes',    icon: 'bi-bar-chart',              label: 'Reportes',     perm: 'VER_REPORTES' },
+  // { to: '/reportes',    icon: 'bi-bar-chart',              label: 'Reportes',     perm: 'VER_REPORTES' },
 ]
 
 const ADMIN_NAV = [

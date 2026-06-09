@@ -7,7 +7,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { nombre:'', apellido:'', email:'' }
+const EMPTY = { nombre:'', apellido:'', email:'', telefono:'', dni_cuit:'' }
 
 export default function AgentesPage() {
   const [rows, setRows]       = useState([])
@@ -35,6 +35,9 @@ export default function AgentesPage() {
   async function handleSave() {
     if (!modal.data.nombre?.trim())   { toast.error('El nombre es obligatorio');   return }
     if (!modal.data.apellido?.trim()) { toast.error('El apellido es obligatorio'); return }
+    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email)) {
+      toast.error('El email no tiene un formato válido'); return
+    }
     setSaving(true)
     try {
       const res = modal.data.id
@@ -42,7 +45,7 @@ export default function AgentesPage() {
         : await createAgente(modal.data)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
       toast.success(modal.data.id ? 'Agente actualizado' : 'Agente creado')
-      setModal(m => ({ ...m, open:false })); load(page)
+      setModal({ open:false, data: { ...EMPTY } }); load(page)
     } catch(e) { toast.error(e?.message || 'Error') }
     finally    { setSaving(false) }
   }
@@ -70,7 +73,7 @@ export default function AgentesPage() {
       <div className="filters-bar">
         <div className="filter-group">
           <label>Buscar</label>
-          <input className="filter-input" style={{ width:220 }} placeholder="Nombre, matrícula..." value={filters.search} onChange={set('search')} />
+          <input className="filter-input" style={{ width:220 }} placeholder="Nombre, DNI, email..." value={filters.search} onChange={set('search')} />
         </div>
         <div className="filter-group">
           <label>Estado</label>
@@ -84,14 +87,16 @@ export default function AgentesPage() {
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>Apellido</th><th>Nombre</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Apellido</th><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
-                  ? <tr><td colSpan={5}><EmptyState icon="bi-person-badge" message="No hay agentes" /></td></tr>
+                  ? <tr><td colSpan={7}><EmptyState icon="bi-person-badge" message="No hay agentes" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td><strong>{r.apellido}</strong></td>
                       <td>{r.nombre}</td>
+                      <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || '—'}</td>
+                      <td>{r.telefono || '—'}</td>
                       <td>{r.email || '—'}</td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
@@ -119,12 +124,16 @@ export default function AgentesPage() {
           <div className="form-group"><label className="form-label">Apellido *</label><input className="form-control" value={modal.data.apellido||''} onChange={setF('apellido')} /></div>
           <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
         </div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">DNI</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" /></div>
+          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
+        </div>
         <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar agente' : 'Activar agente'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
+        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.apellido} ${confirm.item?.nombre || ''}?`}
       />
     </>
   )

@@ -4,7 +4,7 @@ async function listar(query) {
   const page   = Math.max(1, parseInt(query.page)  || 1);
   const limit  = Math.min(100, parseInt(query.limit) || 20);
   const activo = query.activo !== undefined ? (query.activo === 'true' ? 1 : 0) : undefined;
-  const tipo   = ['Persona', 'Empresa'].includes(query.tipo) ? query.tipo : undefined;
+  const tipo   = ['Inquilino', 'Propietario'].includes(query.tipo) ? query.tipo : undefined;
   return model.findAll({ page, limit, activo, tipo, search: query.search });
 }
 

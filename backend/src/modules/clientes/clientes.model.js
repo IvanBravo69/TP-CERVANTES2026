@@ -63,7 +63,7 @@ async function create(data) {
        (tipo, nombre, apellido, razon_social, dni_cuit, email, telefono,
         direccion, pais, provincia, descripcion, presupuesto, moneda)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [tipo || 'Persona', nombre, apellido || null, razon_social || null,
+    [tipo || 'Inquilino', nombre, apellido || null, razon_social || null,
      dni_cuit || null, email || null, telefono || null, direccion || null,
      pais || 'Argentina', provincia || null, descripcion || null,
      presupuesto || null, moneda || 'ARS']

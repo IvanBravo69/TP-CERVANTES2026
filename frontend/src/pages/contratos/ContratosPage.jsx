@@ -11,7 +11,7 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY_C = { tipo:'Alquiler', propiedad_id:'', cliente_id:'', agente_id:'', fecha_inicio:'', fecha_fin:'', monto:'', moneda:'USD' }
+const EMPTY_C = { tipo:'Alquiler', propiedad_id:'', cliente_id:'', agente_id:'', fecha_inicio:'', fecha_fin:'', monto:'', moneda:'ARS' }
 const EMPTY_G = { nombre:'', apellido:'', dni_cuit:'', telefono:'', email:'', direccion:'' }
 const EMPTY_R = { nueva_fecha_fin:'', nuevo_monto:'', nueva_moneda:'', observaciones:'' }
 const BADG_E  = { Activo:'badge-activo', Finalizado:'badge-vendida', Cancelado:'badge-inactivo' }
@@ -21,7 +21,7 @@ export default function ContratosPage() {
   const [total, setTotal]       = useState(0)
   const [page, setPage]         = useState(1)
   const [loading, setLoading]   = useState(false)
-  const [filters, setFilters]   = useState({ tipo:'', estado:'', search:'' })
+  const [filters, setFilters]   = useState({ estado:'', search:'' })
   const [modal, setModal]       = useState({ open:false, data: EMPTY_C })
   const [saving, setSaving]     = useState(false)
   const [estModal, setEstModal] = useState({ open:false, item:null, estado:'' })
@@ -29,8 +29,6 @@ export default function ContratosPage() {
   const [garModal, setGarModal] = useState({ open:false, item:null, list:[], newG: EMPTY_G })
   const [confirm, setConfirm]   = useState({ open:false, garanteId:null })
   const [histModal, setHistModal] = useState({ open:false, item:null, rows:[], loading:false })
-  const SERVICIOS_OPC = ['Luz','Gas','Agua','Expensas','Municipal']
-  const [servModal, setServModal] = useState({ open:false, data:null, selected: [...['Luz','Gas','Agua','Expensas','Municipal']] })
   const [propList, setPropList] = useState([])
   const [cliList,  setCliList]  = useState([])
   const [agList,   setAgList]   = useState([])
@@ -51,7 +49,7 @@ export default function ContratosPage() {
   async function openModal(data = { ...EMPTY_C }) {
     const [rp, rc, ra] = await Promise.all([
       getPropiedades({ limit:200, activo:'true', estado:'Disponible' }),
-      getClientes({ limit:200, activo:'true' }),
+      getClientes({ limit:200, activo:'true', tipo:'Inquilino' }),
       getAgentes({ limit:200, activo:'true' }),
     ])
     if (rp?.success) setPropList(rp.data.rows)
@@ -62,9 +60,9 @@ export default function ContratosPage() {
 
   async function handleSave() {
     if (!modal.data.propiedad_id) { toast.error('Seleccioná una propiedad'); return }
-    if (!modal.data.cliente_id)   { toast.error('Seleccioná un cliente');    return }
+    if (!modal.data.cliente_id)   { toast.error('Seleccioná un inquilino');  return }
     if (!modal.data.fecha_inicio) { toast.error('La fecha de inicio es obligatoria'); return }
-    if (!modal.data.monto)        { toast.error('El monto es obligatorio');   return }
+    if (!modal.data.monto)        { toast.error('El monto es obligatorio');  return }
     setSaving(true)
     try {
       const d = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id), cliente_id: Number(modal.data.cliente_id), agente_id: modal.data.agente_id ? Number(modal.data.agente_id) : null, fecha_fin: modal.data.fecha_fin || null }
@@ -78,23 +76,17 @@ export default function ContratosPage() {
 
   async function handleGenerar() {
     const d = modal.data
-    if (!d.tipo || !d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
+    if (!d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
       toast.error('Completá los campos requeridos'); return
     }
-    setServModal({ open:true, data:d, selected:[...SERVICIOS_OPC] })
-  }
-
-  async function handleConfirmarContrato() {
-    const d = servModal.data
     setSaving(true)
     let saved = false
     try {
-      const payload = { ...d, monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null, servicios: servModal.selected }
+      const payload = { ...d, tipo:'Alquiler', monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null }
       const res = await createContrato(payload)
       if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
       toast.success('Contrato guardado')
       saved = true
-      setServModal({ open:false, data:null, selected:[...SERVICIOS_OPC] })
       setModal({ open:false, data: { ...EMPTY_C } })
       load(page)
     } catch(e) { toast.error(e?.message || 'Error al guardar') }
@@ -108,10 +100,9 @@ export default function ContratosPage() {
     const fmt    = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
     const fmtD   = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '—'
     const hoy    = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' })
-    const esVenta = d.tipo === 'Venta'
 
     const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Contrato de ${d.tipo}</title>
+<title>Contrato de Alquiler</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Georgia,serif;font-size:12pt;color:#1a1a1a;padding:40px 60px;line-height:1.7}
@@ -127,7 +118,7 @@ h1{text-align:center;font-size:18pt;text-transform:uppercase;letter-spacing:.1em
 .footer{text-align:center;font-size:9pt;color:#888;margin-top:32px;border-top:1px solid #ddd;padding-top:12px}
 @media print{body{padding:20px 40px}}
 </style></head><body>
-<h1>Contrato de ${d.tipo}</h1>
+<h1>Contrato de Alquiler</h1>
 <p class="sub">Generado el ${hoy} — Sistema Britos</p>
 
 <div class="sec-title">Propiedad</div>
@@ -136,30 +127,29 @@ h1{text-align:center;font-size:18pt;text-transform:uppercase;letter-spacing:.1em
   <div class="field"><label>Ciudad:</label><br>${prop.ciudad || '—'}</div>
 </div>
 
-<div class="sec-title">Cliente</div>
+<div class="sec-title">Inquilino</div>
 <div class="grid">
-  <div class="field"><label>Nombre:</label><br>${cli.nombre || ''} ${cli.apellido || ''}</div>
-  <div class="field"><label>DNI / CUIT:</label><br>${cli.dni_cuit || '—'}</div>
+  <div class="field"><label>Nombre:</label><br>${cli.apellido || ''} ${cli.nombre || ''}</div>
+  <div class="field"><label>DNI:</label><br>${cli.dni_cuit || '—'}</div>
   <div class="field"><label>Email:</label><br>${cli.email || '—'}</div>
   <div class="field"><label>Teléfono:</label><br>${cli.telefono || '—'}</div>
 </div>
 
 ${agente ? `<div class="sec-title">Agente</div>
 <div class="grid"><div class="field"><label>Nombre:</label><br>${agente.apellido} ${agente.nombre}</div>
-<div class="field"><label>Matrícula:</label><br>${agente.matricula || '—'}</div></div>` : ''}
+<div class="field"><label>DNI:</label><br>${agente.dni_cuit || '—'}</div></div>` : ''}
 
 <div class="sec-title">Condiciones económicas</div>
 <div class="grid">
-  <div class="field"><label>Tipo:</label><br>${d.tipo}</div>
-  <div class="field"><label>Monto:</label><br>${d.moneda} ${fmt(d.monto)}</div>
-  <div class="field"><label>${esVenta ? 'Fecha de venta' : 'Fecha inicio'}:</label><br>${fmtD(d.fecha_inicio)}</div>
-  ${!esVenta ? `<div class="field"><label>Fecha fin:</label><br>${d.fecha_fin ? fmtD(d.fecha_fin) : 'Sin vencimiento'}</div>` : ''}
+  <div class="field"><label>Monto mensual:</label><br>${d.moneda} ${fmt(d.monto)}</div>
+  <div class="field"><label>Fecha inicio:</label><br>${fmtD(d.fecha_inicio)}</div>
+  <div class="field"><label>Fecha fin:</label><br>${d.fecha_fin ? fmtD(d.fecha_fin) : 'Sin vencimiento'}</div>
 </div>
 
 ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">${d.observaciones}</div>` : ''}
 
 <div class="firmas">
-  <div class="firma"><div class="firma-line">Firma del cliente<br><small>${cli.nombre || ''} ${cli.apellido || ''}</small></div></div>
+  <div class="firma"><div class="firma-line">Firma del inquilino<br><small>${cli.apellido || ''} ${cli.nombre || ''}</small></div></div>
   <div class="firma"><div class="firma-line">Representante inmobiliario<br><small>Sistema Britos</small></div></div>
 </div>
 <div class="footer">Documento generado por Sistema Britos — Solo para uso interno</div>
@@ -247,19 +237,14 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div><h1>Contratos</h1><p>Alquileres y ventas</p></div>
+        <div><h1>Contratos</h1><p>Contratos de alquiler</p></div>
         <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-file-earmark-plus" /> Generar contrato</button>
       </div>
 
       <div className="filters-bar">
         <div className="filter-group">
           <label>Buscar</label>
-          <input className="filter-input" style={{ width:220 }} placeholder="# contrato, cliente, propiedad..." value={filters.search} onChange={set('search')} />
-        </div>
-        <div className="filter-group"><label>Tipo</label>
-          <select className="filter-input" value={filters.tipo} onChange={set('tipo')}>
-            <option value="">Todos</option><option>Venta</option><option>Alquiler</option>
-          </select>
+          <input className="filter-input" style={{ width:220 }} placeholder="# contrato, inquilino, propiedad..." value={filters.search} onChange={set('search')} />
         </div>
         <div className="filter-group"><label>Estado</label>
           <select className="filter-input" value={filters.estado} onChange={set('estado')}>
@@ -272,19 +257,18 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
         <div className="table-wrapper">
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
-              <thead><tr><th>#</th><th>Tipo</th><th>Propiedad</th><th>Cliente</th><th>Monto</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>#</th><th>Propiedad</th><th>Inquilino</th><th>Monto</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {rows.length === 0
-                  ? <tr><td colSpan={9}><EmptyState icon="bi-file-earmark-text" message="No hay contratos" /></td></tr>
+                  ? <tr><td colSpan={8}><EmptyState icon="bi-file-earmark-text" message="No hay contratos" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td style={{ color:'var(--tx-4)', fontSize:'.75rem' }}>#{r.id}</td>
-                      <td><span className={`badge badge-${r.tipo?.toLowerCase()}`}>{r.tipo}</span></td>
                       <td style={{ maxWidth:150, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.propiedad_direccion}</td>
-                      <td>{r.cliente_nombre} {r.cliente_apellido||''}</td>
+                      <td>{r.cliente_apellido} {r.cliente_nombre||''}</td>
                       <td style={{ fontWeight:600 }}>{r.moneda} {Number(r.monto).toLocaleString('es-AR')}</td>
                       <td>{r.fecha_inicio ? new Date(r.fecha_inicio).toLocaleDateString('es-AR') : '—'}</td>
-                      <td>{r.tipo === 'Venta' ? '—' : r.fecha_fin ? new Date(r.fecha_fin).toLocaleDateString('es-AR') : '—'}</td>
+                      <td>{r.fecha_fin ? new Date(r.fecha_fin).toLocaleDateString('es-AR') : '—'}</td>
                       <td><span className={`badge ${BADG_E[r.estado]||''}`}>{r.estado}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, fecha_inicio: r.fecha_inicio?.slice(0,10), fecha_fin: r.fecha_fin?.slice(0,10) })}><i className="bi bi-pencil" /></button>
@@ -292,7 +276,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
                         <button className="btn btn-outline btn-sm btn-icon" title="Garantes" onClick={() => openGarantes(r)}><i className="bi bi-people" /></button>
                         {r.estado === 'Activo' && <>
                           <button className="btn btn-warning btn-sm btn-icon" title="Cambiar estado" onClick={() => setEstModal({ open:true, item:r, estado:'Finalizado' })}><i className="bi bi-toggle-off" /></button>
-                          {r.tipo === 'Alquiler' && <button className="btn btn-success btn-sm btn-icon" title="Renovar" onClick={() => setRenModal({ open:true, item:r, data: { ...EMPTY_R } })}><i className="bi bi-arrow-repeat" /></button>}
+                          <button className="btn btn-success btn-sm btn-icon" title="Renovar" onClick={() => setRenModal({ open:true, item:r, data: { ...EMPTY_R } })}><i className="bi bi-arrow-repeat" /></button>
                         </>}
                       </div></td>
                     </tr>
@@ -305,7 +289,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
       </div>
 
       {/* Create/Edit modal */}
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar contrato' : 'Generar contrato'} size="lg"
+      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar contrato' : 'Generar contrato de alquiler'} size="lg"
         footer={<>
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           {modal.data.id
@@ -314,23 +298,15 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           }
         </>}
       >
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">Tipo *</label>
-            <select className="form-select" value={modal.data.tipo||'Alquiler'} onChange={setF('tipo')}><option>Alquiler</option><option>Venta</option></select>
-          </div>
-          <div className="form-group"><label className="form-label">Moneda</label>
-            <select className="form-select" value={modal.data.moneda||'USD'} onChange={setF('moneda')}><option>USD</option><option>ARS</option></select>
-          </div>
-        </div>
         <div className="form-group"><label className="form-label">Propiedad *</label>
           <select className="form-select" value={modal.data.propiedad_id||''} onChange={handlePropChange}>
             <option value="">Seleccioná una propiedad</option>
             {propList.map(p => <option key={p.id} value={p.id}>{p.direccion} — {p.ciudad}</option>)}
           </select>
         </div>
-        <div className="form-group"><label className="form-label">Cliente *</label>
+        <div className="form-group"><label className="form-label">Inquilino *</label>
           <select className="form-select" value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
-            <option value="">Seleccioná un cliente</option>
+            <option value="">Seleccioná un inquilino</option>
             {cliList.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''} {c.dni_cuit ? `— ${c.dni_cuit}` : ''}</option>)}
           </select>
         </div>
@@ -341,15 +317,21 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           </select>
         </div>
         <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{modal.data.tipo === 'Venta' ? 'Fecha de venta *' : 'Fecha inicio *'}</label>
+          <div className="form-group"><label className="form-label">Fecha inicio *</label>
             <input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={setF('fecha_inicio')} />
           </div>
-          {modal.data.tipo !== 'Venta' && (
-            <div className="form-group"><label className="form-label">Fecha fin</label><input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} /></div>
-          )}
+          <div className="form-group"><label className="form-label">Fecha fin</label>
+            <input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} />
+          </div>
         </div>
-        <div className="form-group"><label className="form-label">Monto *</label><input className="form-control" type="number" value={modal.data.monto||''} onChange={setF('monto')} /></div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">Monto *</label>
+            <input className="form-control" type="number" value={modal.data.monto||''} onChange={setF('monto')} />
+          </div>
+          <div className="form-group"><label className="form-label">Moneda</label>
+            <select className="form-select" value={modal.data.moneda||'ARS'} onChange={setF('moneda')}><option>ARS</option><option>USD</option></select>
+          </div>
+        </div>
       </Modal>
 
       {/* Estado modal */}
@@ -382,7 +364,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
         <div className="form-row">
           <div className="form-group"><label className="form-label">Moneda</label>
             <select className="form-select" value={renModal.data.nueva_moneda||''} onChange={e => setRenModal(m => ({ ...m, data: { ...m.data, nueva_moneda: e.target.value } }))}>
-              <option value="">Mantener</option><option value="USD">USD</option><option value="ARS">ARS</option>
+              <option value="">Mantener</option><option value="ARS">ARS</option><option value="USD">USD</option>
             </select>
           </div>
           <div className="form-group"><label className="form-label">Observaciones</label><input className="form-control" value={renModal.data.observaciones||''} onChange={e => setRenModal(m => ({ ...m, data: { ...m.data, observaciones: e.target.value } }))} /></div>
@@ -419,31 +401,6 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm({ open:false, garanteId:null })} onConfirm={handleRemoveGarante}
         title="Quitar garante" message="¿Eliminar este garante del contrato?" />
-
-      {/* Modal selección de servicios */}
-      <Modal open={servModal.open} onClose={() => setServModal(m => ({ ...m, open:false }))} title="Servicios a contratar"
-        footer={<>
-          <button className="btn btn-outline" onClick={() => setServModal(m => ({ ...m, open:false }))}>Cancelar</button>
-          <button className="btn btn-primary" onClick={handleConfirmarContrato} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-printer" /> Confirmar y generar</>}</button>
-        </>}
-      >
-        <p style={{ fontSize:'.85rem', color:'var(--tx-3)', marginBottom:'1.25rem' }}>
-          Seleccioná los servicios básicos que se crearán automáticamente para esta propiedad.
-        </p>
-        <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
-          {SERVICIOS_OPC.map(s => (
-            <label key={s} style={{ display:'flex', alignItems:'center', gap:'.75rem', cursor:'pointer', padding:'.5rem .75rem', border:'1px solid #e2e8f0', borderRadius:8, background: servModal.selected.includes(s) ? '#eff6ff' : '#f8fafc' }}>
-              <input type="checkbox" checked={servModal.selected.includes(s)}
-                onChange={e => setServModal(m => ({ ...m, selected: e.target.checked ? [...m.selected, s] : m.selected.filter(x => x !== s) }))}
-                style={{ width:16, height:16, accentColor:'#1d4ed8' }} />
-              <span style={{ fontWeight:600, fontSize:'.9rem' }}>{s}</span>
-            </label>
-          ))}
-        </div>
-        <p style={{ fontSize:'.78rem', color:'var(--tx-4)', marginTop:'1rem' }}>
-          Podés editarlos y completar los montos desde el módulo Servicios.
-        </p>
-      </Modal>
 
       {/* Modal historial de pagos */}
       <Modal open={histModal.open} onClose={() => setHistModal(m => ({ ...m, open:false }))} title={`Historial — Contrato #${histModal.item?.id}`} size="lg">

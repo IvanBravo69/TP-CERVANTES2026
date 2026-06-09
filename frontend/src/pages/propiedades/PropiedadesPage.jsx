@@ -15,10 +15,8 @@ const BADG  = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alqu
 // Dormitorios determinan el conteo de ambientes (arg: dorm+1, o monoambiente si dorm=0)
 // Los extras son informativos (no cuentan como ambiente)
 const HAB_EXTRAS = [
-  { key:'Banio',    icon:'bi-droplet',   label:'Baño' },
-  { key:'Cochera',  icon:'bi-car-front', label:'Cochera' },
-  { key:'Lavadero', icon:'bi-water',     label:'Lavadero' },
-  { key:'Estudio',  icon:'bi-book',      label:'Estudio' },
+  { key:'Banio',   icon:'bi-droplet',   label:'Baño' },
+  { key:'Cochera', icon:'bi-car-front', label:'Cochera' },
 ]
 const EMPTY_HAB = () => ({ dormitorios: 0, ...Object.fromEntries(HAB_EXTRAS.map(h => [h.key, 0])) })
 
@@ -66,7 +64,7 @@ export default function PropiedadesPage() {
     setHabitaciones(h)
     setModal({ open:true, data })
     const [rc, ra] = await Promise.all([
-      getClientes({ limit:200, activo:'true' }),
+      getClientes({ limit:200, activo:'true', tipo:'Propietario' }),
       getAgentes({ limit:200, activo:'true' }),
     ])
     if (rc?.success) setClientes(rc.data.rows)
@@ -112,7 +110,7 @@ export default function PropiedadesPage() {
       <div className="filters-bar">
         {[
           { k:'tipo',     label:'Tipo',      opts:['','Casa','Departamento','Local','Terreno','Oficina','Otro'] },
-          { k:'operacion',label:'Operación', opts:['','Venta','Alquiler','Venta y Alquiler'] },
+          { k:'operacion',label:'Operación', opts:['','Alquiler'] },
           { k:'estado',   label:'Estado',    opts:['','Disponible','Reservada','Vendida','Alquilada'] },
         ].map(({ k, label, opts }) => (
           <div key={k} className="filter-group">
@@ -171,10 +169,8 @@ export default function PropiedadesPage() {
               {['Casa','Departamento','Local','Terreno','Oficina','Otro'].map(o => <option key={o}>{o}</option>)}
             </select>
           </div>
-          <div className="form-group"><label className="form-label">Operación *</label>
-            <select className="form-select" value={modal.data.operacion||'Alquiler'} onChange={setF('operacion')}>
-              {['Venta','Alquiler','Venta y Alquiler'].map(o => <option key={o}>{o}</option>)}
-            </select>
+          <div className="form-group"><label className="form-label">Operación</label>
+            <input className="form-control" value="Alquiler" readOnly style={{ background:'#f8fafc', color:'var(--tx-3)' }} />
           </div>
         </div>
         <div className="form-group"><label className="form-label">Dirección *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>

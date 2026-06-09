@@ -8,12 +8,9 @@ import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
 const EMPTY = {
-  tipo:'Persona', dni_cuit:'', nombre:'', apellido:'',
-  razon_social:'', descripcion:'', pais:'Argentina', provincia:'',
-  presupuesto:'', moneda:'ARS', email:'', telefono:'', direccion:''
+  tipo:'Inquilino', dni_cuit:'', nombre:'', apellido:'',
+  pais:'Argentina', provincia:'', email:'', telefono:'', direccion:''
 }
-
-const DESCRIPCIONES = ['Inquilino','Propietario','Comprador','Vendedor','Inversor','Garante','Otro']
 
 export default function ClientesPage() {
   const [rows, setRows]       = useState([])
@@ -39,27 +36,33 @@ export default function ClientesPage() {
   useEffect(() => { setPage(1); load(1) }, [filters])
 
   function openNew()   { setModal({ open:true, data: { ...EMPTY } }) }
-  function openEdit(r) { setModal({ open:true, data: { ...r, presupuesto: r.presupuesto ?? '' } }) }
+  function openEdit(r) { setModal({ open:true, data: { ...r } }) }
 
   async function handleSave() {
     if (!modal.data.nombre?.trim())   { toast.error('El nombre es obligatorio');   return }
     if (!modal.data.apellido?.trim()) { toast.error('El apellido es obligatorio'); return }
+    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email)) {
+      toast.error('El email no tiene un formato válido'); return
+    }
     setSaving(true)
     try {
       const payload = {
-        ...modal.data,
-        presupuesto:  modal.data.presupuesto !== '' ? Number(modal.data.presupuesto) : null,
-        razon_social: modal.data.razon_social || undefined,
-        descripcion:  modal.data.descripcion  || undefined,
-        provincia:    modal.data.provincia     || undefined,
-        apellido:     modal.data.apellido,
+        tipo:      modal.data.tipo,
+        dni_cuit:  modal.data.dni_cuit  || undefined,
+        nombre:    modal.data.nombre,
+        apellido:  modal.data.apellido,
+        email:     modal.data.email     || undefined,
+        telefono:  modal.data.telefono  || undefined,
+        direccion: modal.data.direccion || undefined,
+        pais:      modal.data.pais      || undefined,
+        provincia: modal.data.provincia || undefined,
       }
       const res = modal.data.id
         ? await updateCliente(modal.data.id, payload)
         : await createCliente(payload)
       if (!res?.success) { toast.error(res?.message || 'Error'); return }
       toast.success(modal.data.id ? 'Cliente actualizado' : 'Cliente creado')
-      setModal(m => ({ ...m, open:false }))
+      setModal({ open:false, data: { ...EMPTY } })
       load(page)
     } catch(e) { toast.error(e?.message || 'Error') }
     finally    { setSaving(false) }
@@ -79,12 +82,10 @@ export default function ClientesPage() {
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
 
-  const esEmpresa = modal.data.tipo === 'Empresa'
-
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div><h1>Clientes</h1><p>Propietarios, inquilinos y compradores</p></div>
+        <div><h1>Clientes</h1><p>Propietarios e inquilinos</p></div>
         <button className="btn btn-primary" onClick={openNew}><i className="bi bi-plus-lg" /> Cliente</button>
       </div>
 
@@ -96,7 +97,7 @@ export default function ClientesPage() {
         <div className="filter-group">
           <label>Tipo</label>
           <select className="filter-input" value={filters.tipo} onChange={set('tipo')}>
-            <option value="">Todos</option><option>Persona</option><option>Empresa</option>
+            <option value="">Todos</option><option>Inquilino</option><option>Propietario</option>
           </select>
         </div>
         <div className="filter-group">
@@ -112,7 +113,7 @@ export default function ClientesPage() {
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
               <thead><tr>
-                <th>DNI / CUIT</th><th>Nombre / Razón Social</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
+                <th>DNI</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {rows.length === 0
@@ -120,13 +121,10 @@ export default function ClientesPage() {
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || '—'}</td>
-                      <td>
-                        <strong>{r.razon_social || (r.apellido ? r.apellido + ' ' + r.nombre : r.nombre)}</strong>
-                        {r.descripcion && <div style={{ fontSize:'.75rem', color:'var(--tx-3)' }}>{r.descripcion}</div>}
-                      </td>
+                      <td><strong>{r.apellido ? `${r.apellido} ${r.nombre}` : r.nombre}</strong></td>
                       <td>{r.telefono || '—'}</td>
                       <td>{r.email || '—'}</td>
-                      <td><span className={`badge badge-${r.tipo?.toLowerCase()}`}>{r.tipo}</span></td>
+                      <td><span className={`badge badge-${r.tipo === 'Propietario' ? 'disponible' : 'alquiler'}`}>{r.tipo}</span></td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openEdit(r)}><i className="bi bi-pencil" /></button>
@@ -147,7 +145,7 @@ export default function ClientesPage() {
       </div>
 
       <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))}
-        title={modal.data.id ? 'Editar cliente' : 'Cliente'}
+        title={modal.data.id ? 'Editar cliente' : 'Nuevo cliente'}
         size="lg"
         footer={<>
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
@@ -156,27 +154,6 @@ export default function ClientesPage() {
           </button>
         </>}
       >
-        {/* DNI primero */}
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{esEmpresa ? 'CUIT' : 'DNI'}</label>
-            <input className="form-control" value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')} placeholder={esEmpresa ? '30-12345678-9' : '20-12345678-9'} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Tipo</label>
-            <select className="form-select" value={modal.data.tipo || 'Persona'} onChange={setF('tipo')}>
-              <option>Persona</option><option>Empresa</option>
-            </select>
-          </div>
-        </div>
-
-        {esEmpresa && (
-          <div className="form-group">
-            <label className="form-label">Razón Social</label>
-            <input className="form-control" value={modal.data.razon_social || ''} onChange={setF('razon_social')} placeholder="Nombre de la empresa" />
-          </div>
-        )}
-
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Apellido *</label>
@@ -190,41 +167,14 @@ export default function ClientesPage() {
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Descripción</label>
-            <select className="form-select" value={modal.data.descripcion || ''} onChange={setF('descripcion')}>
-              <option value="">— Sin especificar —</option>
-              {DESCRIPCIONES.map(d => <option key={d}>{d}</option>)}
+            <label className="form-label">Tipo</label>
+            <select className="form-select" value={modal.data.tipo || 'Inquilino'} onChange={setF('tipo')}>
+              <option>Inquilino</option><option>Propietario</option>
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">País</label>
-            <input className="form-control" value={modal.data.pais || ''} onChange={setF('pais')} placeholder="Argentina" />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Provincia</label>
-            <input className="form-control" value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="Córdoba" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Dirección</label>
-            <input className="form-control" value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. Colón 1234" />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Presupuesto</label>
-            <input className="form-control" type="number" min="0" step="0.01"
-              value={modal.data.presupuesto ?? ''} onChange={setF('presupuesto')} placeholder="0" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Moneda</label>
-            <select className="form-select" value={modal.data.moneda || 'ARS'} onChange={setF('moneda')}>
-              <option value="ARS">ARS — Peso</option>
-              <option value="USD">USD — Dólar</option>
-            </select>
+            <label className="form-label">DNI</label>
+            <input className="form-control" value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" />
           </div>
         </div>
 
@@ -238,11 +188,22 @@ export default function ClientesPage() {
             <input className="form-control" value={modal.data.telefono || ''} onChange={setF('telefono')} />
           </div>
         </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Provincia</label>
+            <input className="form-control" value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="Córdoba" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Dirección</label>
+            <input className="form-control" value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. Colón 1234" />
+          </div>
+        </div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
         title={confirm.item?.activo ? 'Desactivar cliente' : 'Activar cliente'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.nombre} ${confirm.item?.apellido || ''}?`}
+        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.apellido || ''} ${confirm.item?.nombre || ''}?`}
       />
     </>
   )
