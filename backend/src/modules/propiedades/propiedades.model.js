@@ -64,8 +64,8 @@ async function create(data) {
        (tipo, operacion, titulo, descripcion, direccion, ciudad, provincia,
         precio, moneda, superficie_m2, ambientes, propietario_id, agente_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [tipo, operacion, titulo, descripcion || null, direccion, ciudad, provincia,
-     precio, moneda || 'USD', superficie_m2 || null, ambientes || null,
+    [tipo, operacion || 'Alquiler', titulo || null, descripcion || null, direccion, ciudad, provincia,
+     precio, moneda || 'ARS', superficie_m2 || null, ambientes || null,
      propietario_id || null, agente_id || null]
   );
   return findById(result.insertId);

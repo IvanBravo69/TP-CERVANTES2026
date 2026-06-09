@@ -13,8 +13,8 @@ const validarId = [param('id').isInt({ min: 1 }).withMessage('ID inválido'), va
 
 const validarCrear = [
   body('tipo').isIn(TIPOS).withMessage(`tipo debe ser: ${TIPOS.join(', ')}`),
-  body('operacion').isIn(OPERACIONES).withMessage(`operacion debe ser: ${OPERACIONES.join(', ')}`),
-  body('titulo').trim().notEmpty().withMessage('titulo requerido'),
+  body('operacion').optional().isIn(OPERACIONES),
+  body('titulo').optional().trim(),
   body('descripcion').optional().trim(),
   body('direccion').trim().notEmpty().withMessage('direccion requerida'),
   body('ciudad').trim().notEmpty().withMessage('ciudad requerida'),
