@@ -9,7 +9,7 @@ const validarId = [param('id').isInt({ min: 1 }).withMessage('ID inválido'), va
 const DESCRIPCIONES = ['Inquilino','Propietario','Comprador','Vendedor','Inversor','Garante','Otro'];
 
 const validarCrear = [
-  body('tipo').optional().isIn(['Persona', 'Empresa']),
+  body('tipo').optional().isIn(['Inquilino', 'Propietario']),
   body('nombre').trim().notEmpty().withMessage('nombre requerido'),
   body('apellido').optional().trim(),
   body('razon_social').optional().trim().isLength({ max: 200 }),
@@ -26,7 +26,7 @@ const validarCrear = [
 ];
 
 const validarEditar = [
-  body('tipo').optional().isIn(['Persona', 'Empresa']),
+  body('tipo').optional().isIn(['Inquilino', 'Propietario']),
   body('nombre').optional().trim().notEmpty(),
   body('apellido').optional().trim(),
   body('razon_social').optional().trim().isLength({ max: 200 }),
