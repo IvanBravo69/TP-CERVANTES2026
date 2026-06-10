@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getRoles, createRol, getPermisos, getPermisosDeRol, asignarPermisos } from '../../api/roles'
 import Modal from '../../components/Modal'
 import EmptyState from '../../components/EmptyState'
@@ -22,7 +23,10 @@ export default function RolesPage() {
   useEffect(() => { load() }, [])
 
   async function handleCrear() {
-    if (!nuevoModal.nombre.trim()) { toast.error('El nombre es requerido'); return }
+    if (!nuevoModal.nombre.trim()) {
+      Swal.fire({ icon:'warning', title:'Campo incompleto', text:'El nombre del rol es obligatorio.', confirmButtonText:'Entendido', confirmButtonColor:'#1e3a5f' })
+      return
+    }
     try {
       const res = await createRol({ nombre: nuevoModal.nombre, descripcion: nuevoModal.descripcion })
       if (!res?.success) { toast.error(res?.message || 'Error'); return }

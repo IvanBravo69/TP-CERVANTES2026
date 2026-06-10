@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getServicios, createServicio, updateServicio, pagarServicio } from '../../api/servicios'
 import { getPropiedades } from '../../api/propiedades'
 import Modal from '../../components/Modal'
@@ -11,15 +12,16 @@ import Spinner from '../../components/Spinner'
 const EMPTY = { propiedad_id:'', tipo:'Luz', monto:'', moneda:'ARS', fecha_vencimiento:'', periodo:'' }
 
 export default function ServiciosPage() {
-  const [rows, setRows]       = useState([])
-  const [total, setTotal]     = useState(0)
-  const [page, setPage]       = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ tipo:'', estado:'', contrato_id:'' })
-  const [modal, setModal]     = useState({ open:false, data: EMPTY })
+  const [rows, setRows]         = useState([])
+  const [total, setTotal]       = useState(0)
+  const [page, setPage]         = useState(1)
+  const [loading, setLoading]   = useState(false)
+  const [filters, setFilters]   = useState({ tipo:'', estado:'', contrato_id:'' })
+  const [modal, setModal]       = useState({ open:false, data: EMPTY })
   const [pagarModal, setPagarModal] = useState({ open:false, item:null, fecha:'' })
-  const [saving, setSaving]   = useState(false)
+  const [saving, setSaving]     = useState(false)
   const [propiedades, setPropiedades] = useState([])
+  const [formErrors, setFormErrors]   = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -35,14 +37,28 @@ export default function ServiciosPage() {
   useEffect(() => { setPage(1); load(1) }, [filters])
 
   async function openModal(data = { ...EMPTY }) {
+    setFormErrors([])
     setModal({ open:true, data })
     const rp = await getPropiedades({ limit:200 })
     if (rp?.success) setPropiedades(rp.data.rows)
   }
 
   async function handleSave() {
-    if (!modal.data.propiedad_id) { toast.error('Seleccioná una propiedad'); return }
-    if (!modal.data.monto)        { toast.error('El monto es obligatorio');   return }
+    const errs = []
+    if (!modal.data.propiedad_id)                errs.push({ field:'propiedad_id', msg:'Seleccioná una propiedad' })
+    if (!modal.data.monto || Number(modal.data.monto) <= 0) errs.push({ field:'monto', msg:'El monto es obligatorio' })
+    if (errs.length) {
+      setFormErrors(errs)
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<ul style="text-align:left;margin:0;padding-left:1.2rem;line-height:1.9">${errs.map(e => `<li>${e.msg}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#1e3a5f',
+      })
+      return
+    }
+    setFormErrors([])
     setSaving(true)
     try {
       const payload = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id) }
@@ -65,7 +81,11 @@ export default function ServiciosPage() {
   }
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
-  const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+  const setF = k => e => {
+    setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+    setFormErrors(errs => errs.filter(e => e.field !== k))
+  }
+  const errCls = (base, k) => `${base}${formErrors.some(e => e.field === k) ? ' is-invalid' : ''}`
   const TIPOS = ['Luz','Gas','Agua','Expensas','Municipal','Otro']
 
   return (
@@ -129,9 +149,9 @@ export default function ServiciosPage() {
         <Pagination total={total} page={page} limit={LIMIT} onPage={setPage} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar servicio' : 'Servicio'}
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }} title={modal.data.id ? 'Editar servicio' : 'Servicio'}
         footer={<>
-          <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-outline" onClick={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
         </>}
       >
@@ -149,7 +169,7 @@ export default function ServiciosPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
-            <input className="form-control" type="number" min="0" step="0.01" value={modal.data.monto||''} onChange={setF('monto')} />
+            <input className={errCls('form-control','monto')} type="number" min="0" step="0.01" value={modal.data.monto||''} onChange={setF('monto')} />
           </div>
           <div className="form-group"><label className="form-label">Período</label>
             <input className="form-control" placeholder="ej: 2025-01" value={modal.data.periodo||''} onChange={setF('periodo')} />
@@ -160,7 +180,7 @@ export default function ServiciosPage() {
             <input className="form-control" type="date" value={modal.data.fecha_vencimiento||''} onChange={setF('fecha_vencimiento')} />
           </div>
           <div className="form-group"><label className="form-label">Propiedad *</label>
-            <select className="form-select" value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
+            <select className={errCls('form-select','propiedad_id')} value={modal.data.propiedad_id||''} onChange={setF('propiedad_id')}>
               <option value="">Seleccioná una propiedad</option>
               {propiedades.map(p => <option key={p.id} value={p.id}>{p.direccion}{p.ciudad ? ` — ${p.ciudad}` : ''}</option>)}
             </select>

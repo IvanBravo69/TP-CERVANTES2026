@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getUsuarios, createUsuario, updateUsuario, activarUsuario, desactivarUsuario } from '../../api/usuarios'
 import { getRoles } from '../../api/roles'
 import Modal from '../../components/Modal'
@@ -11,15 +12,16 @@ import Spinner from '../../components/Spinner'
 const EMPTY = { username:'', full_name:'', email:'', password:'', role_id:'' }
 
 export default function UsuariosPage() {
-  const [rows, setRows]       = useState([])
-  const [total, setTotal]     = useState(0)
-  const [page, setPage]       = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ search:'', activo:'' })
-  const [modal, setModal]     = useState({ open:false, data: EMPTY })
-  const [saving, setSaving]   = useState(false)
-  const [confirm, setConfirm] = useState({ open:false, item:null })
-  const [roles, setRoles]     = useState([])
+  const [rows, setRows]         = useState([])
+  const [total, setTotal]       = useState(0)
+  const [page, setPage]         = useState(1)
+  const [loading, setLoading]   = useState(false)
+  const [filters, setFilters]   = useState({ search:'', activo:'' })
+  const [modal, setModal]       = useState({ open:false, data: EMPTY })
+  const [saving, setSaving]     = useState(false)
+  const [confirm, setConfirm]   = useState({ open:false, item:null })
+  const [roles, setRoles]       = useState([])
+  const [formErrors, setFormErrors] = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -37,10 +39,30 @@ export default function UsuariosPage() {
   async function openModal(data = { ...EMPTY }) {
     const rr = await getRoles()
     if (rr?.success) setRoles(rr.data)
+    setFormErrors([])
     setModal({ open:true, data })
   }
 
   async function handleSave() {
+    const errs = []
+    if (!modal.data.username?.trim()) errs.push({ field:'username', msg:'El nombre de usuario es obligatorio' })
+    if (!modal.data.role_id)          errs.push({ field:'role_id',  msg:'Seleccioná un rol' })
+    if (!modal.data.id && !modal.data.password?.trim())
+      errs.push({ field:'password', msg:'La contraseña es obligatoria para usuarios nuevos' })
+    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
+      errs.push({ field:'email', msg:'El email no tiene un formato válido' })
+    if (errs.length) {
+      setFormErrors(errs)
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<ul style="text-align:left;margin:0;padding-left:1.2rem;line-height:1.9">${errs.map(e => `<li>${e.msg}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#1e3a5f',
+      })
+      return
+    }
+    setFormErrors([])
     setSaving(true)
     try {
       const payload = { ...modal.data }
@@ -64,7 +86,11 @@ export default function UsuariosPage() {
   }
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
-  const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+  const setF = k => e => {
+    setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+    setFormErrors(errs => errs.filter(e => e.field !== k))
+  }
+  const errCls = (base, k) => `${base}${formErrors.some(e => e.field === k) ? ' is-invalid' : ''}`
 
   return (
     <>
@@ -117,15 +143,15 @@ export default function UsuariosPage() {
         <Pagination total={total} page={page} limit={LIMIT} onPage={setPage} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar usuario' : 'Usuario'}
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }} title={modal.data.id ? 'Editar usuario' : 'Usuario'}
         footer={<>
-          <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-outline" onClick={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
         </>}
       >
         <div className="form-row">
           <div className="form-group"><label className="form-label">Usuario *</label>
-            <input className="form-control" value={modal.data.username||''} onChange={setF('username')} autoComplete="off" />
+            <input className={errCls('form-control','username')} value={modal.data.username||''} onChange={setF('username')} autoComplete="off" />
           </div>
           <div className="form-group"><label className="form-label">Nombre completo</label>
             <input className="form-control" value={modal.data.full_name||''} onChange={setF('full_name')} />
@@ -133,10 +159,10 @@ export default function UsuariosPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Email</label>
-            <input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} />
+            <input className={errCls('form-control','email')} type="email" value={modal.data.email||''} onChange={setF('email')} />
           </div>
           <div className="form-group"><label className="form-label">Rol *</label>
-            <select className="form-select" value={modal.data.role_id||''} onChange={setF('role_id')}>
+            <select className={errCls('form-select','role_id')} value={modal.data.role_id||''} onChange={setF('role_id')}>
               <option value="">Seleccionar...</option>
               {roles.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
             </select>
@@ -144,7 +170,7 @@ export default function UsuariosPage() {
         </div>
         <div className="form-group">
           <label className="form-label">{modal.data.id ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
-          <input className="form-control" type="password" value={modal.data.password||''} onChange={setF('password')} autoComplete="new-password" />
+          <input className={errCls('form-control','password')} type="password" value={modal.data.password||''} onChange={setF('password')} autoComplete="new-password" />
         </div>
       </Modal>
 

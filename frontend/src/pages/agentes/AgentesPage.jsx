@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getAgentes, createAgente, updateAgente, activarAgente, desactivarAgente } from '../../api/agentes'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
@@ -10,14 +11,15 @@ import Spinner from '../../components/Spinner'
 const EMPTY = { nombre:'', apellido:'', email:'', telefono:'', dni_cuit:'' }
 
 export default function AgentesPage() {
-  const [rows, setRows]       = useState([])
-  const [total, setTotal]     = useState(0)
-  const [page, setPage]       = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ search:'', activo:'' })
-  const [modal, setModal]     = useState({ open:false, data: EMPTY })
-  const [saving, setSaving]   = useState(false)
-  const [confirm, setConfirm] = useState({ open:false, item:null })
+  const [rows, setRows]         = useState([])
+  const [total, setTotal]       = useState(0)
+  const [page, setPage]         = useState(1)
+  const [loading, setLoading]   = useState(false)
+  const [filters, setFilters]   = useState({ search:'', activo:'' })
+  const [modal, setModal]       = useState({ open:false, data: EMPTY })
+  const [saving, setSaving]     = useState(false)
+  const [confirm, setConfirm]   = useState({ open:false, item:null })
+  const [formErrors, setFormErrors] = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -32,12 +34,29 @@ export default function AgentesPage() {
   useEffect(() => { load(page) }, [page])
   useEffect(() => { setPage(1); load(1) }, [filters])
 
+  function openModal(data = { ...EMPTY }) {
+    setFormErrors([])
+    setModal({ open:true, data })
+  }
+
   async function handleSave() {
-    if (!modal.data.nombre?.trim())   { toast.error('El nombre es obligatorio');   return }
-    if (!modal.data.apellido?.trim()) { toast.error('El apellido es obligatorio'); return }
-    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email)) {
-      toast.error('El email no tiene un formato válido'); return
+    const errs = []
+    if (!modal.data.apellido?.trim()) errs.push({ field:'apellido', msg:'El apellido es obligatorio' })
+    if (!modal.data.nombre?.trim())   errs.push({ field:'nombre',   msg:'El nombre es obligatorio' })
+    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
+      errs.push({ field:'email', msg:'El email no tiene un formato válido' })
+    if (errs.length) {
+      setFormErrors(errs)
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<ul style="text-align:left;margin:0;padding-left:1.2rem;line-height:1.9">${errs.map(e => `<li>${e.msg}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#1e3a5f',
+      })
+      return
     }
+    setFormErrors([])
     setSaving(true)
     try {
       const res = modal.data.id
@@ -61,13 +80,17 @@ export default function AgentesPage() {
   }
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
-  const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+  const setF = k => e => {
+    setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+    setFormErrors(errs => errs.filter(e => e.field !== k))
+  }
+  const errCls = (base, k) => `${base}${formErrors.some(e => e.field === k) ? ' is-invalid' : ''}`
 
   return (
     <>
       <div className="page-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div><h1>Agentes</h1><p>Corredores y personal de la inmobiliaria</p></div>
-        <button className="btn btn-primary" onClick={() => setModal({ open:true, data:{...EMPTY} })}><i className="bi bi-plus-lg" /> Agente</button>
+        <button className="btn btn-primary" onClick={() => openModal()}><i className="bi bi-plus-lg" /> Agente</button>
       </div>
 
       <div className="filters-bar">
@@ -100,7 +123,7 @@ export default function AgentesPage() {
                       <td>{r.email || '—'}</td>
                       <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
-                        <button className="btn btn-outline btn-sm btn-icon" onClick={() => setModal({ open:true, data:{...r} })}><i className="bi bi-pencil" /></button>
+                        <button className="btn btn-outline btn-sm btn-icon" onClick={() => openModal({ ...r })}><i className="bi bi-pencil" /></button>
                         <button className={`btn btn-sm btn-icon ${r.activo ? 'btn-warning' : 'btn-success'}`} onClick={() => setConfirm({ open:true, item:r })}>
                           <i className={`bi ${r.activo ? 'bi-person-x' : 'bi-person-check'}`} /></button>
                       </div></td>
@@ -113,22 +136,22 @@ export default function AgentesPage() {
         <Pagination total={total} page={page} limit={LIMIT} onPage={setPage} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))}
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}
         title={modal.data.id ? 'Editar agente' : 'Agente'}
         footer={<>
-          <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-outline" onClick={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
         </>}
       >
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Apellido *</label><input className="form-control" value={modal.data.apellido||''} onChange={setF('apellido')} /></div>
-          <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
+          <div className="form-group"><label className="form-label">Apellido *</label><input className={errCls('form-control','apellido')} value={modal.data.apellido||''} onChange={setF('apellido')} /></div>
+          <div className="form-group"><label className="form-label">Nombre *</label><input className={errCls('form-control','nombre')} value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">DNI</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" /></div>
           <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
         </div>
-        <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
+        <div className="form-group"><label className="form-label">Email</label><input className={errCls('form-control','email')} type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
