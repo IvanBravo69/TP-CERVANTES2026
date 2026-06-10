@@ -204,31 +204,31 @@ u{text-decoration:underline}
 </style></head><body>
 <div class="header">
   <h1>Contrato de Locación de Vivienda</h1>
-  <span class="fecha-label"><u>Fecha:</u> ${hoyStr}</span>
+  <span class="fecha-label">Fecha: ${hoyStr}</span>
 </div>
 <p class="subtitulo">Modelo orientativo para ${ciudad}, ${prov}, Argentina.</p>
 
-<p>En la ciudad de <u>${ciudad}</u>, Provincia de <u>${prov}</u>, República Argentina, a los <u>${dia}</u> días del mes de <u>${mes}</u> del año <u>${anio}</u>, entre <u>${propietario}</u>, DNI N° <u>${propDni}</u>, en adelante denominado/a <u>propietario/a</u>, por una parte; y <u>${inquilino}</u>, DNI N° <u>${inqDni}</u>, en adelante denominado/a <u>inquilino/a</u> por la otra, se celebra el presente <u>Contrato de Locación de Vivienda</u>, sujeto a las siguientes cláusulas y condiciones:</p>
+<p>En la ciudad de <u>${ciudad}</u>, Provincia de <u>${prov}</u>, República Argentina, a los <u>${dia}</u> días del mes de <u>${mes}</u> del año <u>${anio}</u>, entre <u>${propietario}</u>, DNI N° <u>${propDni}</u>, en adelante denominado/a propietario/a, por una parte; y <u>${inquilino}</u>, DNI N° <u>${inqDni}</u>, en adelante denominado/a inquilino/a por la otra, se celebra el presente Contrato de Locación de Vivienda, sujeto a las siguientes cláusulas y condiciones:</p>
 
-<p>El inmueble objeto de la <u>locación</u> se encuentra ubicado en <u>${r.propiedad_direccion}${r.propiedad_ciudad ? ', ' + r.propiedad_ciudad : ''}</u>.</p>
+<p>El inmueble objeto de la locación se encuentra ubicado en <u>${r.propiedad_direccion}${r.propiedad_ciudad ? ', ' + r.propiedad_ciudad : ''}</u>.</p>
 
-<p>El inmueble será destinado <u>exclusivamente</u> a <u>${r.propiedad_tipo || 'inmueble'}</u>.</p>
+<p>El inmueble será destinado exclusivamente a <u>${r.propiedad_tipo || 'inmueble'}</u>.</p>
 
-<p>La <u>locación</u> tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}.</p>
+<p>La locación tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}.</p>
 
-<p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
+<p>El inquilino abonará la suma mensual de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
-<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
+<p>Se entrega en concepto de depósito la suma de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
-${garantes.length > 0 ? `<p>Actúan como <u>garantes</u> del presente contrato: ${garantes.map(g => `<u>${g.apellido || ''} ${g.nombre || ''}</u>, DNI N° <u>${g.dni_cuit || '—'}</u>${g.telefono ? `, tel. ${g.telefono}` : ''}`).join('; ')}.</p>` : ''}
+${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garantes.map(g => `<u>${g.apellido || ''} ${g.nombre || ''}</u>, DNI N° <u>${g.dni_cuit || '—'}</u>${g.telefono ? `, tel. <u>${g.telefono}</u>` : ''}`).join('; ')}.</p>` : ''}
 
-<p>Serán a cargo del inquilino los <u>servicios y gastos</u> que correspondan al uso del inmueble.</p>
+<p>Serán a cargo del inquilino los servicios y gastos que correspondan al uso del inmueble.</p>
 
-<p>El inquilino se <u>compromete</u> a conservar el inmueble en <u>buen estado</u>.</p>
+<p>El inquilino se compromete a conservar el inmueble en buen estado.</p>
 
-<p>Las partes podrán <u>rescindir</u> el contrato conforme a la <u>normativa vigente</u>.</p>
+<p>Las partes podrán rescindir el contrato conforme a la normativa vigente.</p>
 
-<p>Para cualquier controversia las partes se someten a los <u>tribunales competentes</u> de ${ciudad}.</p>
+<p>Para cualquier controversia las partes se someten a los tribunales competentes de <u>${ciudad}</u>.</p>
 
 <div class="firmas">
   <div class="firma"><div class="firma-linea">Firma Inquilino/a<br><small>${inquilino}</small></div></div>
