@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { getContratos, createContrato, updateContrato, cambiarEstado, renovarContrato, getGarantes, addGarante, removeGarante } from '../../api/contratos'
 import { getPagosByContrato } from '../../api/finanzas'
-import { getPropiedades } from '../../api/propiedades'
+import { getPropiedades, getGarantesProp } from '../../api/propiedades'
 import { getClientes }    from '../../api/clientes'
 import { getAgentes }     from '../../api/agentes'
 import Modal from '../../components/Modal'
@@ -29,9 +29,10 @@ export default function ContratosPage() {
   const [garModal, setGarModal] = useState({ open:false, item:null, list:[], newG: EMPTY_G })
   const [confirm, setConfirm]   = useState({ open:false, garanteId:null })
   const [histModal, setHistModal] = useState({ open:false, item:null, rows:[], loading:false })
-  const [propList, setPropList] = useState([])
-  const [cliList,  setCliList]  = useState([])
-  const [agList,   setAgList]   = useState([])
+  const [propList,     setPropList]     = useState([])
+  const [cliList,      setCliList]      = useState([])
+  const [agList,       setAgList]       = useState([])
+  const [propGarantes, setPropGarantes] = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -148,7 +149,13 @@ export default function ContratosPage() {
     } catch(e) { toast.error(e?.message || 'Error') }
   }
 
-  function handlePrint(r) {
+  async function handlePrint(r) {
+    let garantes = []
+    try {
+      const res = await getGarantes(r.id)
+      if (res?.success) garantes = res.data
+    } catch { /* sin garantes */ }
+
     const toDate = s => s ? new Date(String(s).slice(0,10) + 'T12:00:00') : null
     const fmtD = s => { const d = toDate(s); return d ? d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—' }
     const fmtM = n => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
@@ -213,6 +220,8 @@ u{text-decoration:underline}
 
 <p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
+${garantes.length > 0 ? `<p>Actúan como <u>garantes</u> del presente contrato: ${garantes.map(g => `<u>${g.apellido || ''} ${g.nombre || ''}</u>, DNI N° <u>${g.dni_cuit || '—'}</u>${g.telefono ? `, tel. ${g.telefono}` : ''}`).join('; ')}.</p>` : ''}
+
 <p>Serán a cargo del inquilino los <u>servicios y gastos</u> que correspondan al uso del inmueble.</p>
 
 <p>El inquilino se <u>compromete</u> a conservar el inmueble en <u>buen estado</u>.</p>
@@ -253,7 +262,7 @@ u{text-decoration:underline}
     return d.toISOString().slice(0, 10)
   }
 
-  function handlePropChange(e) {
+  async function handlePropChange(e) {
     const propId = e.target.value
     const prop = propList.find(p => String(p.id) === String(propId))
     setModal(m => ({
@@ -264,6 +273,13 @@ u{text-decoration:underline}
         ...(prop?.precio ? { monto: prop.precio, moneda: prop.moneda || m.data.moneda } : {}),
       }
     }))
+    setPropGarantes([])
+    if (propId) {
+      try {
+        const res = await getGarantesProp(propId)
+        if (res?.success) setPropGarantes(res.data)
+      } catch { /* tabla aún no migrada — ignorar */ }
+    }
   }
 
   return (
@@ -322,7 +338,7 @@ u{text-decoration:underline}
       </div>
 
       {/* Create/Edit modal */}
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar contrato' : 'Generar contrato de alquiler'} size="lg"
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setPropGarantes([]) }} title={modal.data.id ? 'Editar contrato' : 'Generar contrato de alquiler'} size="lg"
         footer={<>
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           {modal.data.id
@@ -337,6 +353,18 @@ u{text-decoration:underline}
             {propList.map(p => <option key={p.id} value={p.id}>{p.direccion} — {p.ciudad}</option>)}
           </select>
         </div>
+        {propGarantes.length > 0 && (
+          <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'.6rem .9rem', marginBottom:'.5rem', fontSize:'.82rem' }}>
+            <span style={{ fontWeight:600, color:'#15803d' }}><i className="bi bi-people-fill" style={{ marginRight:4 }} />Garantes de esta propiedad:</span>
+            <ul style={{ margin:'.25rem 0 0 1rem', padding:0 }}>
+              {propGarantes.map(g => (
+                <li key={g.id} style={{ color:'#166534' }}>
+                  {g.apellido} {g.nombre||''}{g.dni_cuit ? ` — DNI ${g.dni_cuit}` : ''}{g.telefono ? ` — ${g.telefono}` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="form-group"><label className="form-label">Inquilino *</label>
           <select className="form-select" value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
             <option value="">Seleccioná un inquilino</option>
