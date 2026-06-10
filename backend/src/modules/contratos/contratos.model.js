@@ -8,16 +8,20 @@ const SELECT_BASE = `
     c.created_at, c.updated_at,
     c.propiedad_id, p.titulo   AS propiedad_titulo,
     p.direccion AS propiedad_direccion, p.ciudad AS propiedad_ciudad,
+    p.provincia AS propiedad_provincia,
     c.cliente_id,
     cl.nombre   AS cliente_nombre,  cl.apellido AS cliente_apellido,
     cl.dni_cuit AS cliente_dni,     cl.telefono AS cliente_telefono,
     cl.email    AS cliente_email,
     a.nombre    AS agente_nombre,   a.apellido  AS agente_apellido,
-    a.telefono  AS agente_telefono
+    a.telefono  AS agente_telefono,
+    po.nombre   AS propietario_nombre,  po.apellido AS propietario_apellido,
+    po.dni_cuit AS propietario_dni
   FROM contratos c
   JOIN propiedades p  ON p.id  = c.propiedad_id
   JOIN clientes   cl ON cl.id = c.cliente_id
-  LEFT JOIN agentes a ON a.id = c.agente_id
+  LEFT JOIN agentes  a  ON a.id  = c.agente_id
+  LEFT JOIN clientes po ON po.id = p.propietario_id
 `;
 
 async function findAll({ page = 1, limit = 20, tipo, estado, cliente_id, propiedad_id, agente_id, search } = {}) {

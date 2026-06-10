@@ -80,85 +80,15 @@ export default function ContratosPage() {
       toast.error('Completá los campos requeridos'); return
     }
     setSaving(true)
-    let saved = false
     try {
       const payload = { ...d, tipo:'Alquiler', monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null }
       const res = await createContrato(payload)
       if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
       toast.success('Contrato guardado')
-      saved = true
       setModal({ open:false, data: { ...EMPTY_C } })
       load(page)
     } catch(e) { toast.error(e?.message || 'Error al guardar') }
     finally { setSaving(false) }
-
-    if (!saved) return
-
-    const prop   = propList.find(p => String(p.id) === String(d.propiedad_id)) || {}
-    const cli    = cliList.find(c => String(c.id) === String(d.cliente_id)) || {}
-    const agente = agList.find(a => String(a.id) === String(d.agente_id))
-    const fmt    = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
-    const fmtD   = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '—'
-    const hoy    = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' })
-
-    const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Contrato de Alquiler</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Georgia,serif;font-size:12pt;color:#1a1a1a;padding:40px 60px;line-height:1.7}
-h1{text-align:center;font-size:18pt;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
-.sub{text-align:center;color:#555;font-size:10pt;margin-bottom:32px}
-.sec-title{font-weight:bold;font-size:11pt;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #999;margin-bottom:10px;padding-bottom:4px;margin-top:20px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:8px}
-.field label{font-weight:bold;font-size:10pt}
-.obs{border:1px solid #ccc;border-radius:4px;padding:12px;font-size:11pt;min-height:60px}
-.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:60px}
-.firma{text-align:center}
-.firma-line{border-top:1px solid #333;padding-top:6px;font-size:10pt;margin-top:48px}
-.footer{text-align:center;font-size:9pt;color:#888;margin-top:32px;border-top:1px solid #ddd;padding-top:12px}
-@media print{body{padding:20px 40px}}
-</style></head><body>
-<h1>Contrato de Alquiler</h1>
-<p class="sub">Generado el ${hoy} — Sistema Britos</p>
-
-<div class="sec-title">Propiedad</div>
-<div class="grid">
-  <div class="field"><label>Dirección:</label><br>${prop.direccion || '—'}</div>
-  <div class="field"><label>Ciudad:</label><br>${prop.ciudad || '—'}</div>
-</div>
-
-<div class="sec-title">Inquilino</div>
-<div class="grid">
-  <div class="field"><label>Nombre:</label><br>${cli.apellido || ''} ${cli.nombre || ''}</div>
-  <div class="field"><label>DNI:</label><br>${cli.dni_cuit || '—'}</div>
-  <div class="field"><label>Email:</label><br>${cli.email || '—'}</div>
-  <div class="field"><label>Teléfono:</label><br>${cli.telefono || '—'}</div>
-</div>
-
-${agente ? `<div class="sec-title">Agente</div>
-<div class="grid"><div class="field"><label>Nombre:</label><br>${agente.apellido} ${agente.nombre}</div>
-<div class="field"><label>DNI:</label><br>${agente.dni_cuit || '—'}</div></div>` : ''}
-
-<div class="sec-title">Condiciones económicas</div>
-<div class="grid">
-  <div class="field"><label>Monto mensual:</label><br>${d.moneda} ${fmt(d.monto)}</div>
-  <div class="field"><label>Fecha inicio:</label><br>${fmtD(d.fecha_inicio)}</div>
-  <div class="field"><label>Fecha fin:</label><br>${d.fecha_fin ? fmtD(d.fecha_fin) : 'Sin vencimiento'}</div>
-</div>
-
-${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">${d.observaciones}</div>` : ''}
-
-<div class="firmas">
-  <div class="firma"><div class="firma-line">Firma del inquilino<br><small>${cli.apellido || ''} ${cli.nombre || ''}</small></div></div>
-  <div class="firma"><div class="firma-line">Representante inmobiliario<br><small>Sistema Britos</small></div></div>
-</div>
-<div class="footer">Documento generado por Sistema Britos — Solo para uso interno</div>
-<script>window.onload=function(){window.print()}<\/script>
-</body></html>`
-
-    const w = window.open('', '_blank', 'width=900,height=700')
-    w.document.write(doc)
-    w.document.close()
   }
 
   async function openHistorial(item) {
@@ -218,6 +148,90 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
     } catch(e) { toast.error(e?.message || 'Error') }
   }
 
+  function handlePrint(r) {
+    const fmtD = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—'
+    const fmtM = n => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
+
+    const hoy = new Date()
+    const hoyStr = `${String(hoy.getDate()).padStart(2,'0')} / ${String(hoy.getMonth()+1).padStart(2,'0')} / ${hoy.getFullYear()}`
+
+    let meses = '—'
+    if (r.fecha_inicio && r.fecha_fin) {
+      const fi = new Date(r.fecha_inicio + 'T12:00:00')
+      const ff = new Date(r.fecha_fin + 'T12:00:00')
+      meses = Math.round((ff - fi) / (1000 * 60 * 60 * 24 * 30.44))
+    }
+
+    const fi   = r.fecha_inicio ? new Date(r.fecha_inicio + 'T12:00:00') : hoy
+    const dia  = fi.getDate()
+    const mes  = fi.toLocaleDateString('es-AR', { month:'long' })
+    const anio = fi.getFullYear()
+
+    const propietario = r.propietario_apellido
+      ? `${r.propietario_apellido}${r.propietario_nombre ? ', ' + r.propietario_nombre : ''}`
+      : '_______________'
+    const propDni = r.propietario_dni || '_______________'
+    const inquilino = `${r.cliente_apellido || ''}${r.cliente_nombre ? ', ' + r.cliente_nombre : ''}`
+    const inqDni  = r.cliente_dni || '_______________'
+    const ciudad  = r.propiedad_ciudad || 'Córdoba'
+    const prov    = r.propiedad_provincia || 'Córdoba'
+
+    const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Contrato de Locación #${r.id}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,serif;font-size:11.5pt;color:#111;padding:48px 64px;line-height:1.8}
+.header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+h1{font-size:14pt;text-transform:uppercase;letter-spacing:.08em;font-weight:bold}
+.fecha-label{font-size:11pt}
+.subtitulo{font-style:italic;margin-bottom:28px;font-size:10.5pt;color:#444}
+p{margin-bottom:14px;text-align:justify}
+u{text-decoration:underline}
+.firmas{display:flex;justify-content:space-between;margin-top:64px}
+.firma{text-align:center;width:44%}
+.firma-linea{border-top:1px solid #222;padding-top:8px;font-size:10pt}
+.footer{text-align:center;font-size:8.5pt;color:#999;margin-top:28px;border-top:1px solid #ddd;padding-top:10px}
+@media print{body{padding:24px 40px}@page{margin:2cm}}
+</style></head><body>
+<div class="header">
+  <h1>Contrato de Locación de Vivienda</h1>
+  <span class="fecha-label"><u>Fecha:</u> ${hoyStr}</span>
+</div>
+<p class="subtitulo">Modelo orientativo para ${ciudad}, ${prov}, Argentina.</p>
+
+<p>En la ciudad de <u>${ciudad}</u>, Provincia de <u>${prov}</u>, República Argentina, a los <u>${dia}</u> días del mes de <u>${mes}</u> del año <u>${anio}</u>, entre <u>${propietario}</u>, DNI N° <u>${propDni}</u>, en adelante denominado/a <u>propietario/a</u>, por una parte; y <u>${inquilino}</u>, DNI N° <u>${inqDni}</u>, en adelante denominado/a <u>inquilino/a</u> por la otra, se celebra el presente <u>Contrato de Locación de Vivienda</u>, sujeto a las siguientes cláusulas y condiciones:</p>
+
+<p>El inmueble objeto de la <u>locación</u> se encuentra ubicado en <u>${r.propiedad_direccion}${r.propiedad_ciudad ? ', ' + r.propiedad_ciudad : ''}</u>.</p>
+
+<p>El inmueble será destinado <u>exclusivamente</u> a <u>vivienda familiar</u>.</p>
+
+<p>La <u>locación</u> tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}. (Límite de dos años)</p>
+
+<p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(r.monto)}</u>.</p>
+
+<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(r.monto)}</u> (= a 1 mes completo).</p>
+
+<p>Serán a cargo del inquilino los <u>servicios y gastos</u> que correspondan al uso del inmueble.</p>
+
+<p>El inquilino se <u>compromete</u> a conservar el inmueble en <u>buen estado</u>.</p>
+
+<p>Las partes podrán <u>rescindir</u> el contrato conforme a la <u>normativa vigente</u>.</p>
+
+<p>Para cualquier controversia las partes se someten a los <u>tribunales competentes</u> de ${ciudad}.</p>
+
+<div class="firmas">
+  <div class="firma"><div class="firma-linea">Firma Inquilino/a<br><small>${inquilino}</small></div></div>
+  <div class="firma"><div class="firma-linea">Firma Propietario/a<br><small>${propietario}</small></div></div>
+</div>
+<div class="footer">Contrato N° ${r.id} — Sistema Britos — Documento de uso interno</div>
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`
+
+    const w = window.open('', '_blank', 'width=860,height=720')
+    w.document.write(doc)
+    w.document.close()
+  }
+
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
 
@@ -271,6 +285,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
                       <td>{r.fecha_fin ? new Date(r.fecha_fin).toLocaleDateString('es-AR') : '—'}</td>
                       <td><span className={`badge ${BADG_E[r.estado]||''}`}>{r.estado}</span></td>
                       <td><div className="table-actions">
+                        <button className="btn btn-outline btn-sm btn-icon" title="Ver contrato" onClick={() => handlePrint(r)}><i className="bi bi-printer" /></button>
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r, fecha_inicio: r.fecha_inicio?.slice(0,10), fecha_fin: r.fecha_fin?.slice(0,10) })}><i className="bi bi-pencil" /></button>
                         <button className="btn btn-outline btn-sm btn-icon" title="Historial de pagos" onClick={() => openHistorial(r)}><i className="bi bi-clock-history" /></button>
                         <button className="btn btn-outline btn-sm btn-icon" title="Garantes" onClick={() => openGarantes(r)}><i className="bi bi-people" /></button>
@@ -294,7 +309,7 @@ ${d.observaciones ? `<div class="sec-title">Observaciones</div><div class="obs">
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           {modal.data.id
             ? <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
-            : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-printer" /> Generar contrato</>}</button>
+            : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-floppy" /> Guardar contrato</>}</button>
           }
         </>}
       >
