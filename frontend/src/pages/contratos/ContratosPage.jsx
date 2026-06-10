@@ -211,7 +211,7 @@ u{text-decoration:underline}
 
 <p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
-<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(mensual)}</u> (= a 1 mes completo).</p>
+<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
 <p>Serán a cargo del inquilino los <u>servicios y gastos</u> que correspondan al uso del inmueble.</p>
 
