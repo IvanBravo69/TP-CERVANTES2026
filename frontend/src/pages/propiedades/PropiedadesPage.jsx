@@ -101,8 +101,11 @@ export default function PropiedadesPage() {
   }
 
   async function openGarantes(item) {
-    const res = await getGarantesProp(item.id)
-    setGarModal({ open:true, item, list: res?.success ? res.data : [], newG: { ...EMPTY_G } })
+    setGarModal({ open:true, item, list:[], newG: { ...EMPTY_G } })
+    try {
+      const res = await getGarantesProp(item.id)
+      setGarModal(m => ({ ...m, list: res?.success ? res.data : [] }))
+    } catch(e) { toast.error('No se pudieron cargar los garantes') }
   }
 
   async function handleAddGarante() {
