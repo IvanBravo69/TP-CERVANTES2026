@@ -41,9 +41,12 @@ export default function AgentesPage() {
 
   async function handleSave() {
     const errs = []
-    if (!modal.data.apellido?.trim()) errs.push({ field:'apellido', msg:'El apellido es obligatorio' })
-    if (!modal.data.nombre?.trim())   errs.push({ field:'nombre',   msg:'El nombre es obligatorio' })
-    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
+    if (!modal.data.apellido?.trim())  errs.push({ field:'apellido', msg:'El apellido es obligatorio' })
+    if (!modal.data.nombre?.trim())    errs.push({ field:'nombre',   msg:'El nombre es obligatorio' })
+    if (!modal.data.dni_cuit?.trim())  errs.push({ field:'dni_cuit', msg:'El DNI es obligatorio' })
+    if (!modal.data.telefono?.trim())  errs.push({ field:'telefono', msg:'El teléfono es obligatorio' })
+    if (!modal.data.email?.trim())     errs.push({ field:'email',    msg:'El email es obligatorio' })
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
       errs.push({ field:'email', msg:'El email no tiene un formato válido' })
     if (errs.length) {
       setFormErrors(errs)
@@ -148,10 +151,10 @@ export default function AgentesPage() {
           <div className="form-group"><label className="form-label">Nombre *</label><input className={errCls('form-control','nombre')} value={modal.data.nombre||''} onChange={setF('nombre')} /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label className="form-label">DNI</label><input className="form-control" value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" /></div>
-          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
+          <div className="form-group"><label className="form-label">DNI *</label><input className={errCls('form-control','dni_cuit')} value={modal.data.dni_cuit||''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" /></div>
+          <div className="form-group"><label className="form-label">Teléfono *</label><input className={errCls('form-control','telefono')} value={modal.data.telefono||''} onChange={setF('telefono')} /></div>
         </div>
-        <div className="form-group"><label className="form-label">Email</label><input className={errCls('form-control','email')} type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
+        <div className="form-group"><label className="form-label">Email *</label><input className={errCls('form-control','email')} type="email" value={modal.data.email||''} onChange={setF('email')} /></div>
       </Modal>
 
       <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}

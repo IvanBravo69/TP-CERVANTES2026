@@ -40,10 +40,15 @@ export default function ClientesPage() {
 
   async function handleSave() {
     const errs = []
-    if (!modal.data.apellido?.trim()) errs.push({ field:'apellido', msg:'El apellido es obligatorio' })
-    if (!modal.data.nombre?.trim())   errs.push({ field:'nombre',   msg:'El nombre es obligatorio' })
-    if (modal.data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
+    if (!modal.data.apellido?.trim())  errs.push({ field:'apellido', msg:'El apellido es obligatorio' })
+    if (!modal.data.nombre?.trim())    errs.push({ field:'nombre',   msg:'El nombre es obligatorio' })
+    if (!modal.data.dni_cuit?.trim())  errs.push({ field:'dni_cuit', msg:'El DNI es obligatorio' })
+    if (!modal.data.telefono?.trim())  errs.push({ field:'telefono', msg:'El teléfono es obligatorio' })
+    if (!modal.data.email?.trim())     errs.push({ field:'email',    msg:'El email es obligatorio' })
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modal.data.email))
       errs.push({ field:'email', msg:'El email no tiene un formato válido' })
+    if (!modal.data.provincia?.trim()) errs.push({ field:'provincia', msg:'La provincia es obligatoria' })
+    if (!modal.data.direccion?.trim()) errs.push({ field:'direccion', msg:'La dirección es obligatoria' })
     if (errs.length) {
       setFormErrors(errs)
       Swal.fire({
@@ -166,30 +171,30 @@ export default function ClientesPage() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">DNI</label>
-            <input className="form-control" value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" />
+            <label className="form-label">DNI *</label>
+            <input className={errCls('form-control','dni_cuit')} value={modal.data.dni_cuit || ''} onChange={setF('dni_cuit')} placeholder="20-12345678-9" />
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Email *</label>
             <input className={errCls('form-control','email')} type="email" value={modal.data.email || ''} onChange={setF('email')} />
           </div>
           <div className="form-group">
-            <label className="form-label">Teléfono</label>
-            <input className="form-control" value={modal.data.telefono || ''} onChange={setF('telefono')} />
+            <label className="form-label">Teléfono *</label>
+            <input className={errCls('form-control','telefono')} value={modal.data.telefono || ''} onChange={setF('telefono')} />
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Provincia</label>
-            <input className="form-control" value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="Córdoba" />
+            <label className="form-label">Provincia *</label>
+            <input className={errCls('form-control','provincia')} value={modal.data.provincia || ''} onChange={setF('provincia')} placeholder="Córdoba" />
           </div>
           <div className="form-group">
-            <label className="form-label">Dirección</label>
-            <input className="form-control" value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. Colón 1234" />
+            <label className="form-label">Dirección *</label>
+            <input className={errCls('form-control','direccion')} value={modal.data.direccion || ''} onChange={setF('direccion')} placeholder="Av. Colón 1234" />
           </div>
         </div>
       </Modal>
