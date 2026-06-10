@@ -44,11 +44,15 @@ async function crear(data) {
     throw { status: 409, message: `La propiedad está en estado "${prop.estado}" y no puede contratarse` };
   }
 
+  const garantesProp = await propGaranModel.findByPropiedadId(propiedad_id);
+  if (garantesProp.length < 3) {
+    throw { status: 400, message: `La propiedad debe tener 3 garantes antes de generar un contrato (tiene ${garantesProp.length})` };
+  }
+
   const contrato = await model.create(data);
   await propModel.setEstado(propiedad_id, PROP_ESTADO_AL_CREAR[tipo]);
 
   // Copiar garantes de la propiedad al nuevo contrato
-  const garantesProp = await propGaranModel.findByPropiedadId(propiedad_id);
   for (const g of garantesProp) {
     const yaVinculado = await garanModel.isLinked(contrato.id, g.id);
     if (!yaVinculado) await garanModel.link(contrato.id, g.id);

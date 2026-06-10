@@ -343,7 +343,7 @@ ${garantes.length > 0 ? `<p>Actúan como <u>garantes</u> del presente contrato: 
           <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
           {modal.data.id
             ? <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
-            : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving}>{saving ? <Spinner size={14} /> : <><i className="bi bi-floppy" /> Guardar contrato</>}</button>
+            : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving || (!!modal.data.propiedad_id && propGarantes.length < 3)}>{saving ? <Spinner size={14} /> : <><i className="bi bi-floppy" /> Guardar contrato</>}</button>
           }
         </>}
       >
@@ -353,17 +353,22 @@ ${garantes.length > 0 ? `<p>Actúan como <u>garantes</u> del presente contrato: 
             {propList.map(p => <option key={p.id} value={p.id}>{p.direccion} — {p.ciudad}</option>)}
           </select>
         </div>
-        {propGarantes.length > 0 && (
-          <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'.6rem .9rem', marginBottom:'.5rem', fontSize:'.82rem' }}>
-            <span style={{ fontWeight:600, color:'#15803d' }}><i className="bi bi-people-fill" style={{ marginRight:4 }} />Garantes de esta propiedad:</span>
-            <ul style={{ margin:'.25rem 0 0 1rem', padding:0 }}>
-              {propGarantes.map(g => (
-                <li key={g.id} style={{ color:'#166534' }}>
-                  {g.apellido} {g.nombre||''}{g.dni_cuit ? ` — DNI ${g.dni_cuit}` : ''}{g.telefono ? ` — ${g.telefono}` : ''}
-                </li>
-              ))}
-            </ul>
-          </div>
+        {modal.data.propiedad_id && (
+          propGarantes.length >= 3
+            ? <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'.6rem .9rem', marginBottom:'.5rem', fontSize:'.82rem' }}>
+                <span style={{ fontWeight:600, color:'#15803d' }}><i className="bi bi-people-fill" style={{ marginRight:4 }} />Garantes ({propGarantes.length}/3):</span>
+                <ul style={{ margin:'.25rem 0 0 1rem', padding:0 }}>
+                  {propGarantes.map(g => (
+                    <li key={g.id} style={{ color:'#166534' }}>
+                      {g.apellido} {g.nombre||''}{g.dni_cuit ? ` — DNI ${g.dni_cuit}` : ''}{g.telefono ? ` — ${g.telefono}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            : <div style={{ background:'#fef9c3', border:'1px solid #fde68a', borderRadius:8, padding:'.6rem .9rem', marginBottom:'.5rem', fontSize:'.82rem', color:'#92400e' }}>
+                <i className="bi bi-exclamation-triangle-fill" style={{ marginRight:6 }} />
+                <strong>Faltan garantes:</strong> la propiedad tiene {propGarantes.length} de 3 requeridos. Cargalos desde el módulo de Propiedades antes de generar el contrato.
+              </div>
         )}
         <div className="form-group"><label className="form-label">Inquilino *</label>
           <select className="form-select" value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
