@@ -159,7 +159,7 @@ export default function ContratosPage() {
     if (r.fecha_inicio && r.fecha_fin) {
       const fi = new Date(r.fecha_inicio + 'T12:00:00')
       const ff = new Date(r.fecha_fin + 'T12:00:00')
-      meses = Math.round((ff - fi) / (1000 * 60 * 60 * 24 * 30.44))
+      meses = (ff.getFullYear() - fi.getFullYear()) * 12 + (ff.getMonth() - fi.getMonth())
     }
 
     const fi   = r.fecha_inicio ? new Date(r.fecha_inicio + 'T12:00:00') : hoy
@@ -234,6 +234,22 @@ u{text-decoration:underline}
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+
+  function handleFechaInicioChange(e) {
+    const val = e.target.value
+    if (!val) { setModal(m => ({ ...m, data: { ...m.data, fecha_inicio: '' } })); return }
+    const d = new Date(val + 'T12:00:00')
+    d.setFullYear(d.getFullYear() + 2)
+    const fechaFin = d.toISOString().slice(0, 10)
+    setModal(m => ({ ...m, data: { ...m.data, fecha_inicio: val, fecha_fin: fechaFin } }))
+  }
+
+  function calcMaxFechaFin() {
+    if (!modal.data.fecha_inicio) return undefined
+    const d = new Date(modal.data.fecha_inicio + 'T12:00:00')
+    d.setFullYear(d.getFullYear() + 2)
+    return d.toISOString().slice(0, 10)
+  }
 
   function handlePropChange(e) {
     const propId = e.target.value
@@ -333,10 +349,10 @@ u{text-decoration:underline}
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Fecha inicio *</label>
-            <input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={setF('fecha_inicio')} />
+            <input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={handleFechaInicioChange} />
           </div>
-          <div className="form-group"><label className="form-label">Fecha fin</label>
-            <input className="form-control" type="date" value={modal.data.fecha_fin||''} onChange={setF('fecha_fin')} />
+          <div className="form-group"><label className="form-label">Fecha fin <small style={{ color:'var(--tx-4)', fontWeight:400 }}>(máx. 2 años)</small></label>
+            <input className="form-control" type="date" value={modal.data.fecha_fin||''} min={modal.data.fecha_inicio||undefined} max={calcMaxFechaFin()} onChange={setF('fecha_fin')} />
           </div>
         </div>
         <div className="form-row">
