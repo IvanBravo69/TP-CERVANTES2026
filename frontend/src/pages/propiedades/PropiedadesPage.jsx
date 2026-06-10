@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getPropiedades, createPropiedad, updatePropiedad, activarPropiedad, desactivarPropiedad, getGarantesProp, addGaranteProp, removeGaranteProp } from '../../api/propiedades'
+import { getPropiedades, createPropiedad, updatePropiedad, activarPropiedad, desactivarPropiedad, getGarantesProp, addGaranteProp, removeGaranteProp, listAdjuntosGarante, subirAdjuntoGarante, verAdjuntoGarante, elimAdjuntoGarante } from '../../api/propiedades'
 import { getClientes } from '../../api/clientes'
 import { getAgentes }  from '../../api/agentes'
 import Modal from '../../components/Modal'
@@ -39,8 +39,10 @@ export default function PropiedadesPage() {
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [saving, setSaving]   = useState(false)
   const [confirm, setConfirm]   = useState({ open:false, item:null })
-  const [garModal, setGarModal] = useState({ open:false, item:null, list:[], newG: EMPTY_G })
+  const [garModal, setGarModal]   = useState({ open:false, item:null, list:[], newG: EMPTY_G })
   const [confirmGar, setConfirmGar] = useState({ open:false, garanteId:null })
+  const [adjuntos, setAdjuntos]   = useState({})   // { garante_id: ['recibo','frente_dni',...] }
+  const [adjLoading, setAdjLoading] = useState({}) // { 'garante_id-tipo': true }
   const [clientes, setClientes] = useState([])
   const [agentes,  setAgentes]  = useState([])
   const [habitaciones, setHabitaciones] = useState(EMPTY_HAB())
@@ -102,10 +104,63 @@ export default function PropiedadesPage() {
 
   async function openGarantes(item) {
     setGarModal({ open:true, item, list:[], newG: { ...EMPTY_G } })
+    setAdjuntos({})
     try {
       const res = await getGarantesProp(item.id)
-      setGarModal(m => ({ ...m, list: res?.success ? res.data : [] }))
-    } catch(e) { toast.error('No se pudieron cargar los garantes') }
+      const list = res?.success ? res.data : []
+      setGarModal(m => ({ ...m, list }))
+      // cargar adjuntos de cada garante
+      const map = {}
+      await Promise.all(list.map(async g => {
+        try {
+          const r2 = await listAdjuntosGarante(item.id, g.id)
+          map[g.id] = r2?.success ? r2.data.map(a => a.tipo) : []
+        } catch { map[g.id] = [] }
+      }))
+      setAdjuntos(map)
+    } catch { toast.error('No se pudieron cargar los garantes') }
+  }
+
+  async function handleSubirAdjunto(propId, garanteId, tipo, file) {
+    if (!file) return
+    const key = `${garanteId}-${tipo}`
+    setAdjLoading(p => ({ ...p, [key]: true }))
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        try {
+          const res = await subirAdjuntoGarante(propId, garanteId, { tipo, nombre: file.name, mime_type: file.type, data: e.target.result })
+          if (!res?.success) { toast.error(res?.message || 'Error al subir'); return }
+          toast.success('Adjunto guardado')
+          setAdjuntos(p => ({ ...p, [garanteId]: [...(p[garanteId]||[]).filter(t => t !== tipo), tipo] }))
+        } catch { toast.error('Error al subir adjunto') }
+        finally { setAdjLoading(p => ({ ...p, [key]: false })) }
+      }
+      reader.readAsDataURL(file)
+    } catch { setAdjLoading(p => ({ ...p, [key]: false })) }
+  }
+
+  async function handleVerAdjunto(propId, garanteId, tipo) {
+    try {
+      const res = await verAdjuntoGarante(propId, garanteId, tipo)
+      if (!res?.success) return
+      const { data, mime_type, nombre } = res.data
+      const w = window.open('', '_blank')
+      if (mime_type?.startsWith('image/')) {
+        w.document.write(`<!DOCTYPE html><html><head><title>${nombre||tipo}</title><style>body{margin:0;background:#111;display:flex;justify-content:center;align-items:center;min-height:100vh}img{max-width:100%;max-height:100vh;object-fit:contain}</style></head><body><img src="${data}"></body></html>`)
+      } else {
+        w.document.write(`<!DOCTYPE html><html><head><title>${nombre||tipo}</title></head><body style="margin:0"><iframe src="${data}" style="width:100%;height:100vh;border:0"></iframe></body></html>`)
+      }
+      w.document.close()
+    } catch { toast.error('No se pudo abrir el adjunto') }
+  }
+
+  async function handleElimAdjunto(propId, garanteId, tipo) {
+    try {
+      await elimAdjuntoGarante(propId, garanteId, tipo)
+      setAdjuntos(p => ({ ...p, [garanteId]: (p[garanteId]||[]).filter(t => t !== tipo) }))
+      toast.success('Adjunto eliminado')
+    } catch { toast.error('Error al eliminar') }
   }
 
   async function handleAddGarante() {
@@ -280,38 +335,66 @@ export default function PropiedadesPage() {
       />
 
       {/* Modal garantes */}
-      <Modal open={garModal.open} onClose={() => setGarModal(m => ({ ...m, open:false }))} title={`Garantes — ${garModal.item?.direccion || ''}`} size="lg">
+      <Modal open={garModal.open} onClose={() => { setGarModal(m => ({ ...m, open:false })); setAdjuntos({}) }} title={`Garantes — ${garModal.item?.direccion || ''}`} size="lg">
         <div style={{ marginBottom:'1rem' }}>
-          <div className="section-title">Garantes actuales</div>
+          <div className="section-title">Garantes ({garModal.list.length}/3)</div>
           {garModal.list.length === 0
             ? <p style={{ color:'var(--tx-4)', fontSize:'.8rem' }}>Sin garantes registrados.</p>
-            : <table><thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Email</th><th></th></tr></thead>
-              <tbody>{garModal.list.map(g => (
-                <tr key={g.id}>
-                  <td>{g.apellido} {g.nombre||''}</td>
-                  <td>{g.dni_cuit||'—'}</td>
-                  <td>{g.telefono||'—'}</td>
-                  <td>{g.email||'—'}</td>
-                  <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => setConfirmGar({ open:true, garanteId:g.id })}><i className="bi bi-trash" /></button></td>
-                </tr>
-              ))}</tbody></table>
+            : garModal.list.map(g => {
+                const tiposAdj = adjuntos[g.id] || []
+                const ADJ_LABELS = { recibo:'Recibo', frente_dni:'Frente DNI', dorso_dni:'Dorso DNI' }
+                return (
+                  <div key={g.id} style={{ border:'1px solid #e2e8f0', borderRadius:8, padding:'.75rem 1rem', marginBottom:'.75rem', background:'#f8fafc' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'.5rem' }}>
+                      <div>
+                        <span style={{ fontWeight:600 }}>{g.apellido} {g.nombre||''}</span>
+                        {g.dni_cuit && <span style={{ color:'var(--tx-4)', fontSize:'.8rem', marginLeft:8 }}>DNI {g.dni_cuit}</span>}
+                        {g.telefono && <span style={{ color:'var(--tx-4)', fontSize:'.8rem', marginLeft:8 }}>{g.telefono}</span>}
+                      </div>
+                      <button className="btn btn-danger btn-sm btn-icon" title="Quitar garante" onClick={() => setConfirmGar({ open:true, garanteId:g.id })}><i className="bi bi-trash" /></button>
+                    </div>
+                    <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap' }}>
+                      {['recibo','frente_dni','dorso_dni'].map(tipo => {
+                        const tiene = tiposAdj.includes(tipo)
+                        const key   = `${g.id}-${tipo}`
+                        const busy  = adjLoading[key]
+                        return (
+                          <div key={tipo} style={{ display:'flex', alignItems:'center', gap:'.25rem' }}>
+                            <label style={{ cursor:'pointer', display:'inline-flex', alignItems:'center', gap:'.3rem', padding:'.3rem .65rem', borderRadius:6, fontSize:'.78rem', fontWeight:500, border:`1px solid ${tiene ? '#86efac' : '#cbd5e1'}`, background: tiene ? '#f0fdf4' : '#fff', color: tiene ? '#15803d' : '#475569' }}>
+                              {busy ? <Spinner size={11} /> : <i className={`bi ${tiene ? 'bi-check-circle-fill' : 'bi-upload'}`} />}
+                              {ADJ_LABELS[tipo]}
+                              <input type="file" accept="image/*,application/pdf" style={{ display:'none' }} onChange={e => { handleSubirAdjunto(garModal.item.id, g.id, tipo, e.target.files[0]); e.target.value='' }} />
+                            </label>
+                            {tiene && <>
+                              <button className="btn btn-outline btn-sm btn-icon" title="Ver" style={{ padding:'3px 6px' }} onClick={() => handleVerAdjunto(garModal.item.id, g.id, tipo)}><i className="bi bi-eye" /></button>
+                              <button className="btn btn-danger btn-sm btn-icon" title="Eliminar adjunto" style={{ padding:'3px 6px' }} onClick={() => handleElimAdjunto(garModal.item.id, g.id, tipo)}><i className="bi bi-x-lg" /></button>
+                            </>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
           }
         </div>
-        <hr className="divider" />
-        <div className="section-title">Agregar garante</div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={garModal.newG.nombre||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, nombre: e.target.value } }))} /></div>
-          <div className="form-group"><label className="form-label">Apellido</label><input className="form-control" value={garModal.newG.apellido||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, apellido: e.target.value } }))} /></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={garModal.newG.dni_cuit||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, dni_cuit: e.target.value } }))} /></div>
-          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={garModal.newG.telefono||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, telefono: e.target.value } }))} /></div>
-        </div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={garModal.newG.email||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, email: e.target.value } }))} /></div>
-          <div className="form-group"><label className="form-label">Dirección</label><input className="form-control" value={garModal.newG.direccion||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, direccion: e.target.value } }))} /></div>
-        </div>
-        <button className="btn btn-primary" onClick={handleAddGarante}><i className="bi bi-plus-lg" /> Agregar</button>
+        {garModal.list.length < 3 && <>
+          <hr className="divider" />
+          <div className="section-title">Agregar garante</div>
+          <div className="form-row">
+            <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={garModal.newG.nombre||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, nombre: e.target.value } }))} /></div>
+            <div className="form-group"><label className="form-label">Apellido</label><input className="form-control" value={garModal.newG.apellido||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, apellido: e.target.value } }))} /></div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={garModal.newG.dni_cuit||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, dni_cuit: e.target.value } }))} /></div>
+            <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={garModal.newG.telefono||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, telefono: e.target.value } }))} /></div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={garModal.newG.email||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, email: e.target.value } }))} /></div>
+            <div className="form-group"><label className="form-label">Dirección</label><input className="form-control" value={garModal.newG.direccion||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, direccion: e.target.value } }))} /></div>
+          </div>
+          <button className="btn btn-primary" onClick={handleAddGarante}><i className="bi bi-plus-lg" /> Agregar</button>
+        </>}
       </Modal>
 
       <ConfirmDialog open={confirmGar.open} onClose={() => setConfirmGar({ open:false, garanteId:null })} onConfirm={handleRemoveGarante}

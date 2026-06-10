@@ -62,6 +62,13 @@ const validarGaranteId = [
   validate,
 ];
 
+const validarAdjuntoId = [
+  param('id').isInt({ min: 1 }),
+  param('garante_id').isInt({ min: 1 }),
+  param('tipo').isIn(['recibo','frente_dni','dorso_dni']).withMessage('tipo inválido'),
+  validate,
+];
+
 router.use(authenticate);
 
 router.get('/',    authorize('VER_PROPIEDADES'), ctrl.listar);
@@ -73,8 +80,14 @@ router.patch('/:id/desactivar',  validarId, authorize('EDITAR_PROPIEDADES'), ctr
 router.patch('/:id/activar',     validarId, authorize('EDITAR_PROPIEDADES'), ctrl.activar);
 
 // Garantes de una propiedad
-router.get('/:id/garantes',                 validarId,        authorize('VER_PROPIEDADES'),    garanCtrl.listar);
-router.post('/:id/garantes',                validarId, validarGarante, authorize('EDITAR_PROPIEDADES'), garanCtrl.agregar);
-router.delete('/:id/garantes/:garante_id',  validarGaranteId, authorize('EDITAR_PROPIEDADES'), garanCtrl.quitar);
+router.get('/:id/garantes',                               validarId,        authorize('VER_PROPIEDADES'),    garanCtrl.listar);
+router.post('/:id/garantes',                              validarId, validarGarante, authorize('EDITAR_PROPIEDADES'), garanCtrl.agregar);
+router.delete('/:id/garantes/:garante_id',                validarGaranteId, authorize('EDITAR_PROPIEDADES'), garanCtrl.quitar);
+
+// Adjuntos de un garante
+router.get('/:id/garantes/:garante_id/adjuntos',          validarGaranteId, authorize('VER_PROPIEDADES'),    garanCtrl.listarAdj);
+router.post('/:id/garantes/:garante_id/adjunto',          validarGaranteId, authorize('EDITAR_PROPIEDADES'), garanCtrl.subirAdj);
+router.get('/:id/garantes/:garante_id/adjunto/:tipo',     validarAdjuntoId, authorize('VER_PROPIEDADES'),    garanCtrl.verAdj);
+router.delete('/:id/garantes/:garante_id/adjunto/:tipo',  validarAdjuntoId, authorize('EDITAR_PROPIEDADES'), garanCtrl.elimAdj);
 
 module.exports = router;
