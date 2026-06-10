@@ -156,12 +156,13 @@ export default function ContratosPage() {
     const hoy = new Date()
     const hoyStr = `${String(hoy.getDate()).padStart(2,'0')} / ${String(hoy.getMonth()+1).padStart(2,'0')} / ${hoy.getFullYear()}`
 
-    let meses = '—'
+    let meses = 24
     const fiD = toDate(r.fecha_inicio)
     const ffD = toDate(r.fecha_fin)
     if (fiD && ffD) {
       meses = (ffD.getFullYear() - fiD.getFullYear()) * 12 + (ffD.getMonth() - fiD.getMonth())
     }
+    const mensual = meses > 0 ? Number(r.monto) / meses : Number(r.monto)
 
     const fi   = fiD || hoy
     const dia  = fi.getDate()
@@ -208,9 +209,9 @@ u{text-decoration:underline}
 
 <p>La <u>locación</u> tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}. (Límite de dos años)</p>
 
-<p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(r.monto)}</u>.</p>
+<p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
-<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(r.monto)}</u> (= a 1 mes completo).</p>
+<p>Se entrega en concepto de <u>depósito</u> la suma de <u>${r.moneda} $${fmtM(mensual)}</u> (= a 1 mes completo).</p>
 
 <p>Serán a cargo del inquilino los <u>servicios y gastos</u> que correspondan al uso del inmueble.</p>
 
