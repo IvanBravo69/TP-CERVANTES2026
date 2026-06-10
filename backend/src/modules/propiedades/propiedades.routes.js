@@ -2,7 +2,8 @@ const router = require('express').Router();
 const { body, param } = require('express-validator');
 const validate = require('../../middlewares/validate');
 const { authenticate, authorize } = require('../../middlewares/auth');
-const ctrl = require('./propiedades.controller');
+const ctrl      = require('./propiedades.controller');
+const garanCtrl = require('./garantes.controller');
 
 const TIPOS       = ['Casa', 'Departamento', 'Local', 'Terreno', 'Oficina', 'Otro'];
 const OPERACIONES = ['Venta', 'Alquiler', 'Venta y Alquiler'];
@@ -44,6 +45,23 @@ const validarEstado = [
   validate,
 ];
 
+const validarGarante = [
+  body('nombre').notEmpty().withMessage('nombre es requerido').trim(),
+  body('apellido').optional().trim(),
+  body('dni_cuit').optional().trim(),
+  body('telefono').optional().trim(),
+  body('email').optional().isEmail().withMessage('email inválido'),
+  body('direccion').optional().trim(),
+  body('observaciones').optional().trim(),
+  validate,
+];
+
+const validarGaranteId = [
+  param('id').isInt({ min: 1 }).withMessage('ID de propiedad inválido'),
+  param('garante_id').isInt({ min: 1 }).withMessage('ID de garante inválido'),
+  validate,
+];
+
 router.use(authenticate);
 
 router.get('/',    authorize('VER_PROPIEDADES'), ctrl.listar);
@@ -53,5 +71,10 @@ router.put('/:id', validarId, validarEditar, authorize('EDITAR_PROPIEDADES'), ct
 router.patch('/:id/estado',      validarId, validarEstado, authorize('EDITAR_PROPIEDADES'), ctrl.cambiarEstado);
 router.patch('/:id/desactivar',  validarId, authorize('EDITAR_PROPIEDADES'), ctrl.desactivar);
 router.patch('/:id/activar',     validarId, authorize('EDITAR_PROPIEDADES'), ctrl.activar);
+
+// Garantes de una propiedad
+router.get('/:id/garantes',                 validarId,        authorize('VER_PROPIEDADES'),    garanCtrl.listar);
+router.post('/:id/garantes',                validarId, validarGarante, authorize('EDITAR_PROPIEDADES'), garanCtrl.agregar);
+router.delete('/:id/garantes/:garante_id',  validarGaranteId, authorize('EDITAR_PROPIEDADES'), garanCtrl.quitar);
 
 module.exports = router;

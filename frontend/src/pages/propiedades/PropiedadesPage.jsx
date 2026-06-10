@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getPropiedades, createPropiedad, updatePropiedad, activarPropiedad, desactivarPropiedad } from '../../api/propiedades'
+import { getPropiedades, createPropiedad, updatePropiedad, activarPropiedad, desactivarPropiedad, getGarantesProp, addGaranteProp, removeGaranteProp } from '../../api/propiedades'
 import { getClientes } from '../../api/clientes'
 import { getAgentes }  from '../../api/agentes'
 import Modal from '../../components/Modal'
@@ -9,8 +9,9 @@ import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 
-const EMPTY = { tipo:'Casa', operacion:'Alquiler', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
-const BADG  = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
+const EMPTY   = { tipo:'Casa', operacion:'Alquiler', direccion:'', ciudad:'', provincia:'', precio:'', moneda:'USD', superficie_m2:'', ambientes:'', propietario_id:'', agente_id:'' }
+const EMPTY_G = { nombre:'', apellido:'', dni_cuit:'', telefono:'', email:'', direccion:'' }
+const BADG    = { Disponible:'badge-disponible', Reservada:'badge-reservada', Alquilada:'badge-alquilada', Vendida:'badge-vendida' }
 
 // Dormitorios determinan el conteo de ambientes (arg: dorm+1, o monoambiente si dorm=0)
 // Los extras son informativos (no cuentan como ambiente)
@@ -37,7 +38,9 @@ export default function PropiedadesPage() {
   const [filters, setFilters] = useState({ tipo:'', operacion:'', estado:'', ciudad:'' })
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [saving, setSaving]   = useState(false)
-  const [confirm, setConfirm] = useState({ open:false, item:null })
+  const [confirm, setConfirm]   = useState({ open:false, item:null })
+  const [garModal, setGarModal] = useState({ open:false, item:null, list:[], newG: EMPTY_G })
+  const [confirmGar, setConfirmGar] = useState({ open:false, garanteId:null })
   const [clientes, setClientes] = useState([])
   const [agentes,  setAgentes]  = useState([])
   const [habitaciones, setHabitaciones] = useState(EMPTY_HAB())
@@ -97,6 +100,33 @@ export default function PropiedadesPage() {
     } catch(e) { toast.error(e?.message || 'Error') }
   }
 
+  async function openGarantes(item) {
+    const res = await getGarantesProp(item.id)
+    setGarModal({ open:true, item, list: res?.success ? res.data : [], newG: { ...EMPTY_G } })
+  }
+
+  async function handleAddGarante() {
+    if (!garModal.newG.nombre?.trim()) { toast.error('El nombre es obligatorio'); return }
+    try {
+      const res = await addGaranteProp(garModal.item.id, garModal.newG)
+      if (!res?.success) { toast.error(res?.message || 'Error'); return }
+      toast.success('Garante agregado')
+      const r2 = await getGarantesProp(garModal.item.id)
+      setGarModal(m => ({ ...m, list: r2?.success ? r2.data : m.list, newG: { ...EMPTY_G } }))
+    } catch(e) { toast.error(e?.message || 'Error') }
+  }
+
+  async function handleRemoveGarante() {
+    const gid = confirmGar.garanteId
+    setConfirmGar({ open:false, garanteId:null })
+    try {
+      await removeGaranteProp(garModal.item.id, gid)
+      const r2 = await getGarantesProp(garModal.item.id)
+      setGarModal(m => ({ ...m, list: r2?.success ? r2.data : m.list }))
+      toast.success('Garante eliminado')
+    } catch(e) { toast.error(e?.message || 'Error') }
+  }
+
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
 
@@ -144,8 +174,9 @@ export default function PropiedadesPage() {
                       <td><span className={`badge ${BADG[r.estado] || ''}`}>{r.estado}</span></td>
                       <td>{r.agente_nombre ? `${r.agente_nombre} ${r.agente_apellido||''}` : '—'}</td>
                       <td><div className="table-actions">
-                        <button className="btn btn-outline btn-sm btn-icon" onClick={() => openModal({ ...r })}><i className="bi bi-pencil" /></button>
-                        <button className={`btn btn-sm btn-icon ${r.activo ? 'btn-warning' : 'btn-success'}`} onClick={() => setConfirm({ open:true, item:r })}>
+                        <button className="btn btn-outline btn-sm btn-icon" title="Garantes" onClick={() => openGarantes(r)}><i className="bi bi-people" /></button>
+                        <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openModal({ ...r })}><i className="bi bi-pencil" /></button>
+                        <button className={`btn btn-sm btn-icon ${r.activo ? 'btn-warning' : 'btn-success'}`} title={r.activo ? 'Desactivar' : 'Activar'} onClick={() => setConfirm({ open:true, item:r })}>
                           <i className={`bi ${r.activo ? 'bi-eye-slash' : 'bi-eye'}`} /></button>
                       </div></td>
                     </tr>
@@ -244,6 +275,44 @@ export default function PropiedadesPage() {
         title={confirm.item?.activo ? 'Desactivar propiedad' : 'Activar propiedad'}
         message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} la propiedad en ${confirm.item?.direccion}?`}
       />
+
+      {/* Modal garantes */}
+      <Modal open={garModal.open} onClose={() => setGarModal(m => ({ ...m, open:false }))} title={`Garantes — ${garModal.item?.direccion || ''}`} size="lg">
+        <div style={{ marginBottom:'1rem' }}>
+          <div className="section-title">Garantes actuales</div>
+          {garModal.list.length === 0
+            ? <p style={{ color:'var(--tx-4)', fontSize:'.8rem' }}>Sin garantes registrados.</p>
+            : <table><thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Email</th><th></th></tr></thead>
+              <tbody>{garModal.list.map(g => (
+                <tr key={g.id}>
+                  <td>{g.apellido} {g.nombre||''}</td>
+                  <td>{g.dni_cuit||'—'}</td>
+                  <td>{g.telefono||'—'}</td>
+                  <td>{g.email||'—'}</td>
+                  <td><button className="btn btn-danger btn-sm btn-icon" onClick={() => setConfirmGar({ open:true, garanteId:g.id })}><i className="bi bi-trash" /></button></td>
+                </tr>
+              ))}</tbody></table>
+          }
+        </div>
+        <hr className="divider" />
+        <div className="section-title">Agregar garante</div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">Nombre *</label><input className="form-control" value={garModal.newG.nombre||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, nombre: e.target.value } }))} /></div>
+          <div className="form-group"><label className="form-label">Apellido</label><input className="form-control" value={garModal.newG.apellido||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, apellido: e.target.value } }))} /></div>
+        </div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">DNI / CUIT</label><input className="form-control" value={garModal.newG.dni_cuit||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, dni_cuit: e.target.value } }))} /></div>
+          <div className="form-group"><label className="form-label">Teléfono</label><input className="form-control" value={garModal.newG.telefono||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, telefono: e.target.value } }))} /></div>
+        </div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">Email</label><input className="form-control" type="email" value={garModal.newG.email||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, email: e.target.value } }))} /></div>
+          <div className="form-group"><label className="form-label">Dirección</label><input className="form-control" value={garModal.newG.direccion||''} onChange={e => setGarModal(m => ({ ...m, newG: { ...m.newG, direccion: e.target.value } }))} /></div>
+        </div>
+        <button className="btn btn-primary" onClick={handleAddGarante}><i className="bi bi-plus-lg" /> Agregar</button>
+      </Modal>
+
+      <ConfirmDialog open={confirmGar.open} onClose={() => setConfirmGar({ open:false, garanteId:null })} onConfirm={handleRemoveGarante}
+        title="Quitar garante" message="¿Eliminar este garante de la propiedad?" />
     </>
   )
 }
