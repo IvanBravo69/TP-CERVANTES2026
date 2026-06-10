@@ -7,6 +7,7 @@ const SELECT_BASE = `
     c.contrato_origen_id, c.agente_id,
     c.created_at, c.updated_at,
     c.propiedad_id, p.titulo   AS propiedad_titulo,
+    p.tipo      AS propiedad_tipo,
     p.direccion AS propiedad_direccion, p.ciudad AS propiedad_ciudad,
     p.provincia AS propiedad_provincia,
     c.cliente_id,

@@ -205,9 +205,9 @@ u{text-decoration:underline}
 
 <p>El inmueble objeto de la <u>locación</u> se encuentra ubicado en <u>${r.propiedad_direccion}${r.propiedad_ciudad ? ', ' + r.propiedad_ciudad : ''}</u>.</p>
 
-<p>El inmueble será destinado <u>exclusivamente</u> a <u>vivienda familiar</u>.</p>
+<p>El inmueble será destinado <u>exclusivamente</u> a <u>${r.propiedad_tipo || 'inmueble'}</u>.</p>
 
-<p>La <u>locación</u> tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}. (Límite de dos años)</p>
+<p>La <u>locación</u> tendrá una duración de <u>${meses}</u> meses, iniciando el <u>${fmtD(r.fecha_inicio)}</u>${r.fecha_fin ? ` y finalizando el <u>${fmtD(r.fecha_fin)}</u>` : ''}.</p>
 
 <p>El inquilino <u>abonará</u> la suma mensual de <u>${r.moneda} $${fmtM(mensual)}</u>.</p>
 
