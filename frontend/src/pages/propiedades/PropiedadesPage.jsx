@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getPropiedades, createPropiedad, updatePropiedad, activarPropiedad, desactivarPropiedad, getGarantesProp, addGaranteProp, removeGaranteProp, listAdjuntosGarante, subirAdjuntoGarante, verAdjuntoGarante, elimAdjuntoGarante } from '../../api/propiedades'
 import { getClientes } from '../../api/clientes'
 import { getAgentes }  from '../../api/agentes'
@@ -46,6 +47,7 @@ export default function PropiedadesPage() {
   const [clientes, setClientes] = useState([])
   const [agentes,  setAgentes]  = useState([])
   const [habitaciones, setHabitaciones] = useState(EMPTY_HAB())
+  const [formErrors, setFormErrors] = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -67,6 +69,7 @@ export default function PropiedadesPage() {
       h.dormitorios = amb <= 1 ? 0 : amb - 1
     }
     setHabitaciones(h)
+    setFormErrors([])
     setModal({ open:true, data })
     const [rc, ra] = await Promise.all([
       getClientes({ limit:200, activo:'true', tipo:'Propietario' }),
@@ -77,9 +80,24 @@ export default function PropiedadesPage() {
   }
 
   async function handleSave() {
-    if (!modal.data.direccion?.trim()) { toast.error('La dirección es obligatoria'); return }
-    if (!modal.data.ciudad?.trim())    { toast.error('La ciudad es obligatoria');    return }
-    if (!modal.data.precio)            { toast.error('El precio es obligatorio');    return }
+    const errs = []
+    if (!modal.data.propietario_id)        errs.push({ field:'propietario_id', msg:'El propietario es obligatorio' })
+    if (!modal.data.direccion?.trim())     errs.push({ field:'direccion',      msg:'La dirección es obligatoria' })
+    if (!modal.data.ciudad?.trim())        errs.push({ field:'ciudad',         msg:'La ciudad es obligatoria' })
+    if (!modal.data.provincia?.trim())     errs.push({ field:'provincia',      msg:'La provincia es obligatoria' })
+    if (!modal.data.precio || Number(modal.data.precio) <= 0) errs.push({ field:'precio', msg:'El precio es obligatorio' })
+    if (errs.length) {
+      setFormErrors(errs)
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<ul style="text-align:left;margin:0;padding-left:1.2rem;line-height:1.9">${errs.map(e => `<li>${e.msg}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#1e3a5f',
+      })
+      return
+    }
+    setFormErrors([])
     setSaving(true)
     try {
       const ambientes = calcAmbientes(habitaciones.dormitorios)
@@ -186,7 +204,12 @@ export default function PropiedadesPage() {
   }
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
-  const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+  const setF = k => e => {
+    setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+    setFormErrors(errs => errs.filter(e => e.field !== k))
+  }
+  const hasErr = k => formErrors.some(e => e.field === k)
+  const errCls = (base, k) => `${base}${hasErr(k) ? ' is-invalid' : ''}`
 
   return (
     <>
@@ -246,9 +269,9 @@ export default function PropiedadesPage() {
         <Pagination total={total} page={page} limit={LIMIT} onPage={setPage} />
       </div>
 
-      <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open:false }))} title={modal.data.id ? 'Editar propiedad' : 'Propiedad'} size="lg"
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }} title={modal.data.id ? 'Editar propiedad' : 'Propiedad'} size="lg"
         footer={<>
-          <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-outline" onClick={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}>Cancelar</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
         </>}
       >
@@ -262,16 +285,16 @@ export default function PropiedadesPage() {
             <input className="form-control" value="Alquiler" readOnly style={{ background:'#f8fafc', color:'var(--tx-3)' }} />
           </div>
         </div>
-        <div className="form-group"><label className="form-label">Dirección *</label><input className="form-control" value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
+        <div className="form-group"><label className="form-label">Dirección *</label><input className={errCls('form-control','direccion')} value={modal.data.direccion||''} onChange={setF('direccion')} /></div>
         <div className="form-row-3">
-          <div className="form-group"><label className="form-label">Ciudad *</label><input className="form-control" value={modal.data.ciudad||''} onChange={setF('ciudad')} /></div>
-          <div className="form-group"><label className="form-label">Provincia *</label><input className="form-control" value={modal.data.provincia||''} onChange={setF('provincia')} /></div>
+          <div className="form-group"><label className="form-label">Ciudad *</label><input className={errCls('form-control','ciudad')} value={modal.data.ciudad||''} onChange={setF('ciudad')} /></div>
+          <div className="form-group"><label className="form-label">Provincia *</label><input className={errCls('form-control','provincia')} value={modal.data.provincia||''} onChange={setF('provincia')} /></div>
           <div className="form-group"><label className="form-label">Moneda</label>
             <select className="form-select" value={modal.data.moneda||'USD'} onChange={setF('moneda')}><option>USD</option><option>ARS</option></select>
           </div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label className="form-label">Precio *</label><input className="form-control" type="number" value={modal.data.precio||''} onChange={setF('precio')} /></div>
+          <div className="form-group"><label className="form-label">Precio *</label><input className={errCls('form-control','precio')} type="number" value={modal.data.precio||''} onChange={setF('precio')} /></div>
           <div className="form-group"><label className="form-label">Superficie m²</label><input className="form-control" type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
         </div>
         <div className="form-group">
@@ -314,9 +337,9 @@ export default function PropiedadesPage() {
 
         <div className="form-row">
           <div style={{ display:'none' }} />
-          <div className="form-group"><label className="form-label">Propietario</label>
-            <select className="form-select" value={modal.data.propietario_id||''} onChange={setF('propietario_id')}>
-              <option value="">Sin propietario</option>
+          <div className="form-group"><label className="form-label">Propietario *</label>
+            <select className={errCls('form-select','propietario_id')} value={modal.data.propietario_id||''} onChange={setF('propietario_id')}>
+              <option value="">Seleccioná un propietario</option>
               {clientes.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''}</option>)}
             </select>
           </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import Swal from 'sweetalert2'
 import { getContratos, createContrato, updateContrato, cambiarEstado, renovarContrato, getGarantes, addGarante, removeGarante } from '../../api/contratos'
 import { getPagosByContrato } from '../../api/finanzas'
 import { getPropiedades, getGarantesProp } from '../../api/propiedades'
@@ -33,6 +34,7 @@ export default function ContratosPage() {
   const [cliList,      setCliList]      = useState([])
   const [agList,       setAgList]       = useState([])
   const [propGarantes, setPropGarantes] = useState([])
+  const [formErrors,   setFormErrors]   = useState([])
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -56,14 +58,35 @@ export default function ContratosPage() {
     if (rp?.success) setPropList(rp.data.rows)
     if (rc?.success) setCliList(rc.data.rows)
     if (ra?.success) setAgList(ra.data.rows)
+    setFormErrors([])
+    setPropGarantes([])
     setModal({ open:true, data })
   }
 
+  function validarContrato(d) {
+    const errs = []
+    if (!d.propiedad_id)                  errs.push({ field:'propiedad_id', msg:'Seleccioná una propiedad' })
+    if (!d.cliente_id)                    errs.push({ field:'cliente_id',   msg:'Seleccioná un inquilino' })
+    if (!d.fecha_inicio)                  errs.push({ field:'fecha_inicio', msg:'La fecha de inicio es obligatoria' })
+    if (!d.monto || Number(d.monto) <= 0) errs.push({ field:'monto',        msg:'El monto total es obligatorio' })
+    return errs
+  }
+
+  function mostrarErrores(errs) {
+    setFormErrors(errs)
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos',
+      html: `<ul style="text-align:left;margin:0;padding-left:1.2rem;line-height:1.9">${errs.map(e => `<li>${e.msg}</li>`).join('')}</ul>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#1e3a5f',
+    })
+  }
+
   async function handleSave() {
-    if (!modal.data.propiedad_id) { toast.error('Seleccioná una propiedad'); return }
-    if (!modal.data.cliente_id)   { toast.error('Seleccioná un inquilino');  return }
-    if (!modal.data.fecha_inicio) { toast.error('La fecha de inicio es obligatoria'); return }
-    if (!modal.data.monto)        { toast.error('El monto es obligatorio');  return }
+    const errs = validarContrato(modal.data)
+    if (errs.length) { mostrarErrores(errs); return }
+    setFormErrors([])
     setSaving(true)
     try {
       const d = { ...modal.data, monto: Number(modal.data.monto), propiedad_id: Number(modal.data.propiedad_id), cliente_id: Number(modal.data.cliente_id), agente_id: modal.data.agente_id ? Number(modal.data.agente_id) : null, fecha_fin: modal.data.fecha_fin || null }
@@ -76,12 +99,12 @@ export default function ContratosPage() {
   }
 
   async function handleGenerar() {
-    const d = modal.data
-    if (!d.propiedad_id || !d.cliente_id || !d.fecha_inicio || !d.monto) {
-      toast.error('Completá los campos requeridos'); return
-    }
+    const errs = validarContrato(modal.data)
+    if (errs.length) { mostrarErrores(errs); return }
+    setFormErrors([])
     setSaving(true)
     try {
+      const d = modal.data
       const payload = { ...d, tipo:'Alquiler', monto: Number(d.monto), propiedad_id: Number(d.propiedad_id), cliente_id: Number(d.cliente_id), agente_id: d.agente_id ? Number(d.agente_id) : null, fecha_fin: d.fecha_fin || null }
       const res = await createContrato(payload)
       if (!res?.success) { toast.error(res?.message || 'Error al guardar'); return }
@@ -244,7 +267,12 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
   }
 
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
-  const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+  const setF = k => e => {
+    setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
+    setFormErrors(errs => errs.filter(e => e.field !== k))
+  }
+  const hasErr = k => formErrors.some(e => e.field === k)
+  const errCls = (base, k) => `${base}${hasErr(k) ? ' is-invalid' : ''}`
 
   function handleFechaInicioChange(e) {
     const val = e.target.value
@@ -338,9 +366,9 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
       </div>
 
       {/* Create/Edit modal */}
-      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setPropGarantes([]) }} title={modal.data.id ? 'Editar contrato' : 'Generar contrato de alquiler'} size="lg"
+      <Modal open={modal.open} onClose={() => { setModal(m => ({ ...m, open:false })); setPropGarantes([]); setFormErrors([]) }} title={modal.data.id ? 'Editar contrato' : 'Generar contrato de alquiler'} size="lg"
         footer={<>
-          <button className="btn btn-outline" onClick={() => setModal(m => ({ ...m, open:false }))}>Cancelar</button>
+          <button className="btn btn-outline" onClick={() => { setModal(m => ({ ...m, open:false })); setFormErrors([]) }}>Cancelar</button>
           {modal.data.id
             ? <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? <Spinner size={14} /> : 'Guardar'}</button>
             : <button className="btn btn-primary" onClick={handleGenerar} disabled={saving || (!!modal.data.propiedad_id && propGarantes.length < 3)}>{saving ? <Spinner size={14} /> : <><i className="bi bi-floppy" /> Guardar contrato</>}</button>
@@ -348,7 +376,7 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
         </>}
       >
         <div className="form-group"><label className="form-label">Propiedad *</label>
-          <select className="form-select" value={modal.data.propiedad_id||''} onChange={handlePropChange}>
+          <select className={errCls('form-select','propiedad_id')} value={modal.data.propiedad_id||''} onChange={e => { handlePropChange(e); setFormErrors(errs => errs.filter(x => x.field !== 'propiedad_id')) }}>
             <option value="">Seleccioná una propiedad</option>
             {propList.map(p => <option key={p.id} value={p.id}>{p.direccion} — {p.ciudad}</option>)}
           </select>
@@ -371,7 +399,7 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
               </div>
         )}
         <div className="form-group"><label className="form-label">Inquilino *</label>
-          <select className="form-select" value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
+          <select className={errCls('form-select','cliente_id')} value={modal.data.cliente_id||''} onChange={setF('cliente_id')}>
             <option value="">Seleccioná un inquilino</option>
             {cliList.map(c => <option key={c.id} value={c.id}>{c.apellido} {c.nombre||''} {c.dni_cuit ? `— ${c.dni_cuit}` : ''}</option>)}
           </select>
@@ -384,7 +412,7 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Fecha inicio *</label>
-            <input className="form-control" type="date" value={modal.data.fecha_inicio||''} onChange={handleFechaInicioChange} />
+            <input className={errCls('form-control','fecha_inicio')} type="date" value={modal.data.fecha_inicio||''} onChange={e => { handleFechaInicioChange(e); setFormErrors(errs => errs.filter(x => x.field !== 'fecha_inicio')) }} />
           </div>
           <div className="form-group"><label className="form-label">Fecha fin <small style={{ color:'var(--tx-4)', fontWeight:400 }}>(máx. 2 años)</small></label>
             <input className="form-control" type="date" value={modal.data.fecha_fin||''} min={modal.data.fecha_inicio||undefined} max={calcMaxFechaFin()} onChange={setF('fecha_fin')} />
@@ -392,7 +420,7 @@ ${garantes.length > 0 ? `<p>Actúan como garantes del presente contrato: ${garan
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Monto *</label>
-            <input className="form-control" type="number" value={modal.data.monto||''} onChange={setF('monto')} />
+            <input className={errCls('form-control','monto')} type="number" value={modal.data.monto||''} onChange={setF('monto')} />
           </div>
           <div className="form-group"><label className="form-label">Moneda</label>
             <select className="form-select" value={modal.data.moneda||'ARS'} onChange={setF('moneda')}><option>ARS</option><option>USD</option></select>

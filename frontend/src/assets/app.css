@@ -375,6 +375,16 @@ textarea.form-control { resize: vertical; min-height: 80px; line-height: 1.5; }
 }
 .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+}
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.18);
+}
 
 /* ══════════════════════════════════════
    MODAL
