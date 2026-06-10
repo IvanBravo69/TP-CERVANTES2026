@@ -1,8 +1,10 @@
-const model        = require('./contratos.model');
-const propModel    = require('../propiedades/propiedades.model');
-const clienteModel = require('../clientes/clientes.model');
-const honorariosSvc = require('../honorarios/honorarios.service');
-const serviciosModel = require('../servicios/servicios.model');
+const model            = require('./contratos.model');
+const propModel        = require('../propiedades/propiedades.model');
+const clienteModel     = require('../clientes/clientes.model');
+const honorariosSvc    = require('../honorarios/honorarios.service');
+const serviciosModel   = require('../servicios/servicios.model');
+const garanModel       = require('./garantes.model');
+const propGaranModel   = require('../propiedades/garantes.model');
 
 const SERVICIOS_BASICOS = ['Luz', 'Gas', 'Agua', 'Expensas', 'Municipal'];
 
@@ -44,6 +46,13 @@ async function crear(data) {
 
   const contrato = await model.create(data);
   await propModel.setEstado(propiedad_id, PROP_ESTADO_AL_CREAR[tipo]);
+
+  // Copiar garantes de la propiedad al nuevo contrato
+  const garantesProp = await propGaranModel.findByPropiedadId(propiedad_id);
+  for (const g of garantesProp) {
+    const yaVinculado = await garanModel.isLinked(contrato.id, g.id);
+    if (!yaVinculado) await garanModel.link(contrato.id, g.id);
+  }
 
   // Auto-generar honorario de cierre según configuración
   const tipoHonorario = tipo === 'Venta' ? 'Cierre_Venta' : 'Cierre_Alquiler';
@@ -128,6 +137,13 @@ async function renovar(id, data) {
 
   // Auto-generar honorario de cierre para el nuevo contrato de alquiler renovado
   await honorariosSvc.autoGenerar(nuevo.id, 'Cierre_Alquiler');
+
+  // Copiar garantes de la propiedad al contrato renovado
+  const garantesProp = await propGaranModel.findByPropiedadId(contrato.propiedad_id);
+  for (const g of garantesProp) {
+    const yaVinculado = await garanModel.isLinked(nuevo.id, g.id);
+    if (!yaVinculado) await garanModel.link(nuevo.id, g.id);
+  }
 
   return nuevo;
 }
