@@ -85,7 +85,8 @@ export default function PropiedadesPage() {
     if (!modal.data.direccion?.trim())     errs.push({ field:'direccion',      msg:'La dirección es obligatoria' })
     if (!modal.data.ciudad?.trim())        errs.push({ field:'ciudad',         msg:'La ciudad es obligatoria' })
     if (!modal.data.provincia?.trim())     errs.push({ field:'provincia',      msg:'La provincia es obligatoria' })
-    if (!modal.data.precio || Number(modal.data.precio) <= 0) errs.push({ field:'precio', msg:'El precio es obligatorio' })
+    if (!modal.data.precio || Number(modal.data.precio) <= 0)             errs.push({ field:'precio',        msg:'El precio es obligatorio' })
+    if (!modal.data.superficie_m2 || Number(modal.data.superficie_m2) <= 0) errs.push({ field:'superficie_m2', msg:'La superficie en m² es obligatoria' })
     if (errs.length) {
       setFormErrors(errs)
       Swal.fire({
@@ -295,7 +296,7 @@ export default function PropiedadesPage() {
         </div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">Precio *</label><input className={errCls('form-control','precio')} type="number" value={modal.data.precio||''} onChange={setF('precio')} /></div>
-          <div className="form-group"><label className="form-label">Superficie m²</label><input className="form-control" type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
+          <div className="form-group"><label className="form-label">Superficie m² *</label><input className={errCls('form-control','superficie_m2')} type="number" value={modal.data.superficie_m2||''} onChange={setF('superficie_m2')} /></div>
         </div>
         <div className="form-group">
           <label className="form-label">Ambientes</label>
