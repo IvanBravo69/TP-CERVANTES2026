@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getClientes, createCliente, updateCliente, activarCliente, desactivarCliente } from '../../api/clientes'
+import { getClientes, createCliente, updateCliente } from '../../api/clientes'
 import Modal from '../../components/Modal'
-import ConfirmDialog from '../../components/ConfirmDialog'
 import Pagination from '../../components/Pagination'
 import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
@@ -17,10 +16,9 @@ export default function ClientesPage() {
   const [total, setTotal]     = useState(0)
   const [page, setPage]       = useState(1)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState({ search:'', tipo:'', activo:'' })
+  const [filters, setFilters] = useState({ search:'', tipo:'' })
   const [modal, setModal]     = useState({ open:false, data: EMPTY })
   const [saving, setSaving]   = useState(false)
-  const [confirm, setConfirm] = useState({ open:false, item:null })
   const LIMIT = 20
 
   const load = useCallback(async (p = page) => {
@@ -68,17 +66,6 @@ export default function ClientesPage() {
     finally    { setSaving(false) }
   }
 
-  async function handleToggle() {
-    const item = confirm.item
-    setConfirm(c => ({ ...c, open:false }))
-    try {
-      const res = item.activo ? await desactivarCliente(item.id) : await activarCliente(item.id)
-      if (!res?.success) { toast.error(res?.message || 'Error'); return }
-      toast.success(item.activo ? 'Cliente desactivado' : 'Cliente activado')
-      load(page)
-    } catch(e) { toast.error(e?.message || 'Error') }
-  }
-
   const set  = k => e => setFilters(f => ({ ...f, [k]: e.target.value }))
   const setF = k => e => setModal(m => ({ ...m, data: { ...m.data, [k]: e.target.value } }))
 
@@ -100,12 +87,6 @@ export default function ClientesPage() {
             <option value="">Todos</option><option>Inquilino</option><option>Propietario</option>
           </select>
         </div>
-        <div className="filter-group">
-          <label>Estado</label>
-          <select className="filter-input" value={filters.activo} onChange={set('activo')}>
-            <option value="">Todos</option><option value="1">Activo</option><option value="0">Inactivo</option>
-          </select>
-        </div>
       </div>
 
       <div className="card">
@@ -113,11 +94,11 @@ export default function ClientesPage() {
           {loading ? <div style={{ textAlign:'center', padding:'3rem' }}><Spinner /></div> : (
             <table>
               <thead><tr>
-                <th>DNI</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
+                <th>DNI</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Tipo</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {rows.length === 0
-                  ? <tr><td colSpan={7}><EmptyState icon="bi-people" message="No hay clientes" /></td></tr>
+                  ? <tr><td colSpan={6}><EmptyState icon="bi-people" message="No hay clientes" /></td></tr>
                   : rows.map(r => (
                     <tr key={r.id}>
                       <td style={{ color:'var(--tx-3)', fontSize:'.8rem' }}>{r.dni_cuit || '—'}</td>
@@ -125,14 +106,8 @@ export default function ClientesPage() {
                       <td>{r.telefono || '—'}</td>
                       <td>{r.email || '—'}</td>
                       <td><span className={`badge badge-${r.tipo === 'Propietario' ? 'disponible' : 'alquiler'}`}>{r.tipo}</span></td>
-                      <td><span className={`badge badge-${r.activo ? 'activo' : 'inactivo'}`}>{r.activo ? 'Activo' : 'Inactivo'}</span></td>
                       <td><div className="table-actions">
                         <button className="btn btn-outline btn-sm btn-icon" title="Editar" onClick={() => openEdit(r)}><i className="bi bi-pencil" /></button>
-                        <button className={`btn btn-sm btn-icon ${r.activo ? 'btn-warning' : 'btn-success'}`}
-                          title={r.activo ? 'Desactivar' : 'Activar'}
-                          onClick={() => setConfirm({ open:true, item:r })}>
-                          <i className={`bi ${r.activo ? 'bi-person-x' : 'bi-person-check'}`} />
-                        </button>
                       </div></td>
                     </tr>
                   ))
@@ -200,11 +175,6 @@ export default function ClientesPage() {
           </div>
         </div>
       </Modal>
-
-      <ConfirmDialog open={confirm.open} onClose={() => setConfirm(c => ({ ...c, open:false }))} onConfirm={handleToggle}
-        title={confirm.item?.activo ? 'Desactivar cliente' : 'Activar cliente'}
-        message={`¿${confirm.item?.activo ? 'Desactivar' : 'Activar'} a ${confirm.item?.apellido || ''} ${confirm.item?.nombre || ''}?`}
-      />
     </>
   )
 }
