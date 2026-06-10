@@ -149,20 +149,21 @@ export default function ContratosPage() {
   }
 
   function handlePrint(r) {
-    const fmtD = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—'
+    const toDate = s => s ? new Date(String(s).slice(0,10) + 'T12:00:00') : null
+    const fmtD = s => { const d = toDate(s); return d ? d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—' }
     const fmtM = n => Number(n).toLocaleString('es-AR', { minimumFractionDigits:2 })
 
     const hoy = new Date()
     const hoyStr = `${String(hoy.getDate()).padStart(2,'0')} / ${String(hoy.getMonth()+1).padStart(2,'0')} / ${hoy.getFullYear()}`
 
     let meses = '—'
-    if (r.fecha_inicio && r.fecha_fin) {
-      const fi = new Date(r.fecha_inicio + 'T12:00:00')
-      const ff = new Date(r.fecha_fin + 'T12:00:00')
-      meses = (ff.getFullYear() - fi.getFullYear()) * 12 + (ff.getMonth() - fi.getMonth())
+    const fiD = toDate(r.fecha_inicio)
+    const ffD = toDate(r.fecha_fin)
+    if (fiD && ffD) {
+      meses = (ffD.getFullYear() - fiD.getFullYear()) * 12 + (ffD.getMonth() - fiD.getMonth())
     }
 
-    const fi   = r.fecha_inicio ? new Date(r.fecha_inicio + 'T12:00:00') : hoy
+    const fi   = fiD || hoy
     const dia  = fi.getDate()
     const mes  = fi.toLocaleDateString('es-AR', { month:'long' })
     const anio = fi.getFullYear()
