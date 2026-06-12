@@ -1,8 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getStats } from '../api/stats'
 import Spinner from '../components/Spinner'
+
+function today()     { return new Date().toISOString().slice(0,10) }
+function firstOfMonth() {
+  const d = new Date(); d.setDate(1); return d.toISOString().slice(0,10)
+}
+function fmtDate(iso) {
+  if (!iso) return ''
+  const [y,m,d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
 
 const STAT_CFG = [
   { key:'total_clientes',    label:'Clientes activos',   icon:'bi-people-fill',            bg:'#f5f3ff', color:'#7c3aed' },
@@ -27,6 +37,8 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [stats,   setStats]   = useState(null)
   const [loading, setLoading] = useState(true)
+  const [desde,   setDesde]   = useState('')
+  const [hasta,   setHasta]   = useState('')
 
   const h = new Date().getHours()
   const greeting = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches'
@@ -36,9 +48,32 @@ export default function Dashboard() {
   const now = new Date()
   const dateStr = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`
 
-  useEffect(() => {
-    getStats().then(r => { if (r?.success) setStats(r.data) }).finally(() => setLoading(false))
+  const fetchStats = useCallback((d, h) => {
+    setLoading(true)
+    getStats(d, h).then(r => { if (r?.success) setStats(r.data) }).finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { fetchStats('', '') }, [fetchStats])
+
+  function handleDesde(v) {
+    setDesde(v)
+    if (v && hasta) fetchStats(v, hasta)
+    else if (!v)    fetchStats('', hasta ? '' : '')
+  }
+  function handleHasta(v) {
+    setHasta(v)
+    if (desde && v) fetchStats(desde, v)
+    else if (!v)    fetchStats(desde ? '' : '', '')
+  }
+  function limpiarFiltro() {
+    setDesde(''); setHasta(''); fetchStats('', '')
+  }
+  function aplicarMesActual() {
+    const d = firstOfMonth(), h = today()
+    setDesde(d); setHasta(h); fetchStats(d, h)
+  }
+
+  const filtroActivo = desde && hasta
 
   const total = stats?.total_propiedades || 1
 
@@ -48,6 +83,40 @@ export default function Dashboard() {
         <h2>{greeting}, {name}</h2>
         <p>{dateStr}</p>
         <i className="bi bi-buildings-fill banner-icon" />
+      </div>
+
+      {/* ── Filtro de fechas ── */}
+      <div className="date-filter-bar">
+        <div className="date-filter-left">
+          <i className="bi bi-calendar-range" style={{ color:'var(--tx-3)', fontSize:'.95rem' }} />
+          <span className="date-filter-label">Período</span>
+          <div className="date-filter-inputs">
+            <label className="date-filter-field">
+              <span>Desde</span>
+              <input type="date" value={desde} max={hasta || today()} onChange={e => handleDesde(e.target.value)} />
+            </label>
+            <span className="date-filter-sep">—</span>
+            <label className="date-filter-field">
+              <span>Hasta</span>
+              <input type="date" value={hasta} min={desde} max={today()} onChange={e => handleHasta(e.target.value)} />
+            </label>
+          </div>
+        </div>
+        <div className="date-filter-right">
+          <button className="btn btn-outline btn-sm" onClick={aplicarMesActual}>
+            <i className="bi bi-calendar-month" /> Este mes
+          </button>
+          {filtroActivo && (
+            <>
+              <span className="date-filter-badge">
+                <i className="bi bi-funnel-fill" /> {fmtDate(desde)} – {fmtDate(hasta)}
+              </span>
+              <button className="btn btn-outline btn-sm date-filter-clear" onClick={limpiarFiltro}>
+                <i className="bi bi-x" /> Limpiar
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {loading ? (

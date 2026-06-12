@@ -564,6 +564,42 @@ textarea.form-control { resize: vertical; min-height: 80px; line-height: 1.5; }
 }
 
 /* ══════════════════════════════════════
+   DATE FILTER BAR
+══════════════════════════════════════ */
+.date-filter-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .625rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: .6rem 1rem;
+  margin-bottom: 1.125rem; box-shadow: var(--sh-sm);
+}
+.date-filter-left  { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.date-filter-right { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.date-filter-label { font-size: .78rem; font-weight: 700; color: var(--tx-2); white-space: nowrap; }
+.date-filter-sep   { font-size: .8rem; color: var(--tx-4); }
+.date-filter-inputs { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.date-filter-field {
+  display: flex; align-items: center; gap: .3rem;
+  background: var(--bg); border: 1px solid var(--border-2);
+  border-radius: var(--r-sm); padding: .3rem .6rem;
+  cursor: pointer; transition: border-color .15s;
+}
+.date-filter-field:focus-within { border-color: var(--primary); }
+.date-filter-field span { font-size: .72rem; color: var(--tx-3); font-weight: 600; white-space: nowrap; }
+.date-filter-field input[type="date"] {
+  border: none; background: transparent; outline: none;
+  font-size: .78rem; color: var(--tx-1); font-family: inherit;
+  cursor: pointer; width: 118px;
+}
+.date-filter-badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--primary-lt); border: 1px solid var(--primary-bd);
+  color: var(--primary); border-radius: 99px;
+  font-size: .72rem; font-weight: 600; padding: .25rem .7rem;
+}
+.date-filter-clear { color: var(--red) !important; border-color: var(--red) !important; }
+.date-filter-clear:hover { background: var(--red-bg) !important; }
+
+/* ══════════════════════════════════════
    PROGRESS BARS
 ══════════════════════════════════════ */
 .progress-bar-wrap {
